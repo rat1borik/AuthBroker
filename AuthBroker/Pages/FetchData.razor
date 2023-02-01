@@ -2,47 +2,58 @@
 
 <PageTitle>Weather forecast</PageTitle>
 
-@using AuthBroker.Data
-@inject WeatherForecastService ForecastService
+@using AuthBroker.Model
+@inject Model.VehicleStore VHS
 
 <h1>Weather forecast</h1>
 
 <p>This component demonstrates fetching data from a service.</p>
 
-@if (forecasts == null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Temp. (C)</th>
-                <th>Temp. (F)</th>
-                <th>Summary</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var forecast in forecasts)
-            {
+@if (vehicles == null) {
+        <p><em>Loading...</em></p>
+} else {
+        <button class="button" @onclick="@Refresh">
+        Refresh
+        </button>
+
+        <button class="button" @onclick="@Init">
+            Reinit
+        </button>
+        <table class="table">
+            <thead>
                 <tr>
-                    <td>@forecast.Date.ToShortDateString()</td>
-                    <td>@forecast.TemperatureC</td>
-                    <td>@forecast.TemperatureF</td>
-                    <td>@forecast.Summary</td>
+                    <th>VIN</th>
+                    <th>Fuel</th>
+                    <th>Type</th>
+                    <th>Model</th>
                 </tr>
+            </thead>
+            <tbody>
+            @foreach (var veh in vehicles) {
+                        <tr>
+                                    <td>@veh.VehicleIdentificationNumber</td>
+                                    <td>@veh.Fuel</td>
+                                    <td>@veh.Type</td>
+                                    <td>@veh.Model</td>
+                        </tr>
             }
-        </tbody>
-    </table>
+            </tbody>
+        </table>
 }
 
 @code {
-    private WeatherForecast[]? forecasts;
+    private List<Vehicle>? vehicles;
 
-    protected override async Task OnInitializedAsync()
-    {
-        forecasts = await ForecastService.GetForecastAsync(DateTime.Now);
+    protected async Task Refresh() {
+        vehicles = await VHS.GetListAsync();
+    }
+
+    protected async Task Init() {
+        await VHS.InitAsync();
+        await Refresh();
+    }
+
+    protected override async Task OnInitializedAsync() {
+        await Refresh();
     }
 }
