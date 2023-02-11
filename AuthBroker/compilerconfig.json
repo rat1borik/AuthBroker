@@ -1,0 +1,12 @@
+﻿[
+  {
+    "outputFile": "wwwroot/App.css",
+    "inputFile": "wwwroot/App.scss",
+    "minify": {
+      "enabled": true
+    },
+    "options": {
+      "sourceMap": true
+    }
+  }
+]

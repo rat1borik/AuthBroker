@@ -1,0 +1,39 @@
+﻿@using AuthBroker.Model
+
+ <div id="exampleModal" class="modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add new row</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Name:</label>
+                  <!--  @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })-->
+                        </div>
+                        <div class="form-group">
+                            <label>Country:</label>
+                     <!-- @Html.DropDownListFor(m => m.Country, new List<SelectListItem>
+                                   { new SelectListItem{Text="India", Value="India"},
+                                     new SelectListItem{Text="China", Value="China"},
+                                     new SelectListItem{Text="Australia", Value="Australia"},
+                                     new SelectListItem{Text="France", Value="France"},
+                                     new SelectListItem{Text="Unites States", Value="Unites States"},
+                                     new SelectListItem{Text="Russia", Value="Russia"},
+                                     new SelectListItem{Text="Canada", Value="Canada"}},
+                                     "Please select", new { @class = "form-control" })-->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Add</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+@code {
+
+}

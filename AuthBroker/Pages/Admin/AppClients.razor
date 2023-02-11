@@ -1,0 +1,111 @@
+﻿@page "/appClients"
+
+<PageTitle>Admin panel: AppClients</PageTitle>
+
+@using AuthBroker.Model
+@using AuthBroker.Forms
+@inject Model.AppClientStore acs
+@inject IJSRuntime jsr
+
+<!-- Modal -->
+<div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addModalLabel">Add new App</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+        <form>
+          <div class="modal-body mb-3">
+            <label for="recipient-name" class="col-form-label" >Name</label>
+            <input  type="text" class="form-control" id="recipient-name" @bind="@formName" required>
+              </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @onclick="@Add">Save changes</button>
+          </div>
+        </form>
+    </div>
+  </div>
+</div>
+
+    <h1>AppClients</h1>
+
+@if (appClients == null) {
+    <p><em>Loading...</em></p>
+} else {
+        
+
+            <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>App Name</th>
+                <th>App Id</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var _app in appClients) {
+                <tr class="col">
+                        <td class="align-middle">@_app.Name</td>
+                        <td class="align-middle">@_app.AppId <button class="btn btn-dark" @onclick="()=>CopyToClipboard(_app.AppId.ToString())"><span class="oi oi-clipboard"></span></button></td>
+                        <td class="d-flex justify-content-end"><button class="btn btn-dark" @onclick="() => Remove(_app)"><span class="oi oi-trash"></span></button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+      Add
+    </button>              
+}
+
+<Modal @ref="secretKeyModal" Title="Your App`s Secret Key!">
+    <HeaderTemplate>You will not see it again</HeaderTemplate>
+    <BodyTemplate>
+        @secretKey
+        <button class="btn btn-dark" @onclick="()=>CopyToClipboard(secretKey)"><span class="oi oi-clipboard"></span></button>
+    </BodyTemplate>
+</Modal>
+
+@code {
+    [Inject] protected ToastService ToastService { get; set; }
+
+    private string formName = "";
+    private string secretKey = "";
+    private Modal? secretKeyModal;
+
+    [CascadingParameter]
+    private List<AppClient>? appClients { get; set; }
+
+    protected async Task Refresh() {
+        appClients = await acs.GetListAsync();
+    }
+
+    protected override async Task OnInitializedAsync() {
+        await Refresh();
+    }
+
+    private async Task Add() {
+        var appClient = new AppClient() { Name = formName };
+        await acs.AddAsync(appClient);
+        secretKey = appClient.GetSecretKey();
+        await secretKeyModal.ShowAsync();
+        await Refresh();
+    }
+
+    private void OnHideSecretModalClick() {
+        secretKey = "";
+        secretKeyModal.ShowAsync();
+    }
+
+    private async Task Remove(AppClient gr) {
+        await acs.RemoveAsync(gr);
+        await Refresh();
+    }
+
+    private async Task CopyToClipboard(string text) {
+        await jsr.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        ToastService.Notify(new(ToastType.Success, "Copied!"));
+    }
+}

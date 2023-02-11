@@ -1,0 +1,19 @@
+﻿@page "/logout"
+
+@using AuthBroker.Authentication
+@using AuthBroker.Model;
+@inject UserAccStore us;
+@inject NavigationManager navManager;
+@inject AuthenticationStateProvider authStateProvider;
+
+<span>Logging out</span>
+
+@code {
+
+	 protected override async Task OnInitializedAsync() {
+			var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
+
+			await customAuthStateProvider.UpdateAuthenticationState(null);
+			navManager.NavigateTo("/", true);
+	}
+}

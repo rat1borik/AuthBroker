@@ -1,0 +1,106 @@
+﻿@using AuthBroker.Authentication
+@using AuthBroker.Model;
+@inject UserAccStore us;
+@inject IJSRuntime js;
+@inject AuthenticationStateProvider authStateProvider;
+@inject NavigationManager navManager;
+<section class="vh-100 gradient-custom">
+		<div class="row g-0 d-flex justify-content-center align-items-center h-100">
+	  <div class="col-12 col-md-8 col-lg-6 col-xl-5"style=" max-width: 450px">
+		<div class="card bg-dark text-white login-box " style="border-radius: 1rem;">
+			<ul class="nav nav-pills nav-justified my-2 mx-2" id="myTab" role="tablist">
+  <li class="nav-item" role="presentation" >
+	<button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">Вход</button>
+  </li>
+  <li class="nav-item" role="presentation">
+	<button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">Регистрация</button>
+  </li>
+
+</ul>
+<div class="tab-content" id="myTabContent">
+  <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+		  <div class="card-body p-5 text-center">
+
+			<div class="mb-md-3 mt-md-4 pb-5">
+
+			  <span class="oi oi-key mb-5 fs-1 text-white-50"></span>
+
+			  <div class="form-outline form-white mb-3">
+				<input @bind="model.UserName" type="text" id="typeEmailX" placeholder="Логин" class="form-control" />
+			  </div>
+
+			  <div class="form-outline form-white mb-3">
+				<input @bind="model.Password"  type="password" id="typePasswordX" placeholder="Пароль" class="form-control" />
+			  </div>
+
+								@*<p class="small mb-5 pb-lg-2"><a class="text-white-50" href="#!">Forgot password?</a></p>*@
+
+			  <button class="btn btn-outline-primary btn-lg px-5 mt-5" type="submit"  @onclick="@Authenticate">Войти</button>
+
+			</div>
+
+		  </div>
+		</div>
+		<div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+			<form>
+			<div class="card-body p-5 text-center">
+
+			<div class="mb-md-3 mt-md-4 pb-5">
+
+			  <span class="oi oi-account-login mb-5 fs-1 text-white-50"></span>
+
+			  <div class="form-outline form-white mb-3">
+				<input type="text" id="typeEmailX" placeholder="Логин" class="form-control"/>
+			  </div>
+
+			  <div class="form-outline form-white mb-3">
+				<input type="email" id="typeEmailX" placeholder="E-mail" class="form-control" />
+			  </div>
+
+			  <div class="form-outline form-white mb-3">
+				<input type="password" id="typePasswordX" @onpaste:preventDefault="true" placeholder="Придумайте пароль" class="form-control" />
+			  </div>
+
+			  <div class="form-outline form-white mb-3">
+				<input type="password" id="typePasswordX" @onpaste:preventDefault="true" placeholder="Повторите пароль" class="form-control" />
+			  </div>
+
+									@*<p class="small mb-5 pb-lg-2"><a class="text-white-50" href="#!">Forgot password?</a></p>*@
+
+			  <button class="btn btn-outline-primary btn-lg px-5 mt-5" type="button" @onclick:preventDefault>Зарегистрироваться</button>
+
+			</div>
+
+		  </div>
+		  </form>
+		</div>
+		</div>
+		 </div>
+	  </div>
+	</div>
+
+</section>
+
+@code {
+		private class Model {
+			public string UserName { get; set; }
+			public string Password { get; set; }
+		}
+
+		private Model model = new Model();
+	
+		private async Task Authenticate() {
+			var userAccount = await us.GetByLogin(model.UserName);
+			if (userAccount == null || userAccount.Password != model.Password) {
+				await js.InvokeVoidAsync("alert", "Invalid User Name or Password");
+				return;
+			}
+
+			var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
+			await customAuthStateProvider.UpdateAuthenticationState(new UserSession {
+					UserName = userAccount.Login,
+					Role = "admin"
+				});
+			navManager.NavigateTo("/", true);
+	}
+}

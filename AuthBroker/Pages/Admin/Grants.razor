@@ -1,0 +1,82 @@
+﻿@page "/grants"
+
+<PageTitle>Admin panel: Grants</PageTitle>
+
+@using AuthBroker.Model
+@using AuthBroker.Forms
+@inject Model.GrantStore gs
+
+<!-- Modal -->
+<div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addModalLabel">Add new Grant</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+        <form>
+          <div class="modal-body mb-3">
+            <label for="recipient-name" class="col-form-label" >Name</label>
+            <input  type="text" class="form-control" id="recipient-name" @bind="@formName" required>
+              </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @onclick="@Add">Save changes</button>
+          </div>
+        </form>
+    </div>
+  </div>
+</div>
+
+    <h1>Grants</h1>
+
+@if (grants == null) {
+    <p><em>Loading...</em></p>
+} else {
+        
+
+            <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Grant Name</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var gr in grants) {
+                <tr>
+                    <td class="align-middle">@gr.Name</td>
+                     <td class="d-flex justify-content-end"><button class="btn btn-dark" @onclick="() => Remove(gr)"><span class="oi oi-trash"></span></button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+      Add
+    </button>              
+}
+
+@code {
+    private string formName = "";
+    [CascadingParameter]
+    private List<Grant>? grants { get; set; }
+
+    protected async Task Refresh() {
+        grants = await gs.GetListAsync();
+    }
+
+    protected override async Task OnInitializedAsync() {
+        await Refresh();
+    }
+
+    private async Task Add() {
+        await gs.AddAsync(new Grant() { Name = formName});
+        await Refresh();
+    }
+
+    private async Task Remove(Grant gr) {
+        await gs.RemoveAsync(gr);
+        await Refresh();
+    } 
+}
