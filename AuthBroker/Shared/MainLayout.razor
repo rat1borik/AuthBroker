@@ -18,15 +18,17 @@
 	</main>
 	</div>*@
 
-<AuthorizeView>
+<AuthorizeView Context="Auth">
 	<Authorized>
 		<div class="page">
-	<div class="sidebar">
-		<NavMenu />
-	</div>
-
+			<AuthorizeView Roles="Admin" Context="AdminNavBar">
+				<div class="sidebar">
+					<NavMenu />
+				</div>
+			</AuthorizeView>
 	<main>
 		<div class="top-row px-4">
+			<span>@string.Format("{0} ({1})", Auth.User.Identity.Name, Auth.User.IsInRole("Admin")?"Admin":"User")</span>
 			<a href="/logout">Logout</a>
 			<a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
 		</div>

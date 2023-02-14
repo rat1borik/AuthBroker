@@ -99,7 +99,7 @@
 			var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
 			await customAuthStateProvider.UpdateAuthenticationState(new UserSession {
 					UserName = userAccount.Login,
-					Role = "admin"
+					Role = "User"
 				});
 			navManager.NavigateTo("/", true);
 	}

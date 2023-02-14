@@ -1,0 +1,69 @@
+﻿@page "/auth"
+
+@using System.Web
+@using Model
+@inject NavigationManager navManager
+@inject SessionStore ss
+@inject AuthenticationStateProvider asp
+
+<h3>Authorize</h3>
+<p>@AppId</p>
+@foreach (var a in RequestedScopes.ToList()) {
+		<p> @a.ToString()</p>
+}
+@if (CurrentSession != null) {
+	<h4>Current session:</h4>
+	<p>App: @CurrentSession.App.Name</p>
+	<p>Scopes:</p>
+	@if (CurrentSession.Scopes != null) {
+		@foreach (var scope in CurrentSession.Scopes) {
+			<p>@scope.Name</p>
+		}
+	}
+} else {
+	<Button Color="ButtonColor.Primary" @onclick="@Auth">Accept</Button>
+}
+
+@code {
+	[Parameter]
+	[SupplyParameterFromQuery(Name ="app_id")]
+	public string AppId { get;set; }
+
+	[Parameter]
+	[SupplyParameterFromQuery(Name = "scopes")]
+	public Guid[] RequestedScopes { get; set; }
+
+	[Parameter]
+	[SupplyParameterFromQuery(Name = "redirect_uri")]
+	public string? RedirectURI { get; set; }
+
+	[CascadingParameter]
+	private Session? CurrentSession { get; set; }
+
+	private async Task Auth() {
+		var state = await asp.GetAuthenticationStateAsync();
+		var sess = await ss.CreateSession(state.User.Identity.Name, AppId, RequestedScopes);
+		Redirect(sess.Id.ToString());
+	}
+
+	private void Redirect(string authCode) {
+		Uri redir;
+		if (Uri.TryCreate(RedirectURI, UriKind.Absolute, out redir)) {
+			UriBuilder ub = new UriBuilder(redir);
+			var query = HttpUtility.ParseQueryString(ub.Query);
+			query["auth_code"] = authCode;
+			ub.Query = query.ToString();
+			navManager.NavigateTo(ub.ToString(), true);
+
+		}
+	}
+
+	protected override async Task OnInitializedAsync() {
+		var state = await asp.GetAuthenticationStateAsync();
+		CurrentSession = await ss.GetSession(AppId, state.User.Identity.Name);
+		if (CurrentSession != null)
+			Redirect(CurrentSession.Id.ToString());
+
+		
+	}
+}

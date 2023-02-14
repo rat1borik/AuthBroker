@@ -18,27 +18,27 @@ public class User {
 	public JsonDocument? Credentials { get; set; }
 }
 
-public class AppGrants {
+public class Session {
 
 	[Key]
 	public Guid Id { get; set; }
-	public Guid UserId { get; set; }
-	public Guid AppId { get; set; }
-	public Guid[]? Grants { get; set; }
+	public User User { get; set; }
+	public AppClient App { get; set; }
+	public ICollection<Scope>? Scopes { get; set; }
 }
 
-public class Grant {
+public class Scope {
 	[Key]
 	public Guid Id { get; set; }
 	public string Name { get; set; }
+	public ICollection<Session>? Sessions { get; set; }
 }
 
 public class AppClient {
-	[Key]
-	public Guid Id { get; set; }
+	public string Id { get; set; } = Math.Abs(Random.Shared.NextInt64()).ToString();
 	public byte[] SecretKey { get; set; }
 	public string Name { get; set; }
-	public ulong AppId { get; set; } = (ulong)Math.Abs(Random.Shared.NextInt64());
+
 
 
 	public AppClient() {

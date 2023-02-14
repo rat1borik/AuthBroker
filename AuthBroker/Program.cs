@@ -1,4 +1,3 @@
-using AuthBroker.Data;
 using AuthBroker.Model;
 using AuthBroker.Authentication;
 using Microsoft.AspNetCore.Authentication;
@@ -32,14 +31,14 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddOptions();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddSingleton<WeatherForecastService>();
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 builder.Services.AddScoped<ProtectedSessionStorage>();
 builder.Services.AddScoped<AuthenticationStateProvider,CustomAuthenticationStateProvider > ();
 builder.Services.AddAntiforgery();
-builder.Services.AddTransient<GrantStore>();
+builder.Services.AddTransient<ScopeStore>();
 builder.Services.AddTransient<UserAccStore>();
 builder.Services.AddTransient<AppClientStore>();
+builder.Services.AddTransient<SessionStore>();
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -54,7 +53,14 @@ using (var scope = app.Services.CreateScope()) {
 	dbCtx.Database.EnsureDeleted();
 	dbCtx.Database.EnsureCreated();
 
-	dbCtx.Users.Add(new User() { Login = "228775", Password = "123456" });
+	var usr = new User() { Login = "228775", Password = "123456" };
+	dbCtx.Users.Add(usr);
+	var appc = new AppClient() { Name = "341342143", Id = "1" };
+	var scp = new Scope() { Name = "sdfasgdsfa" };
+	var sess = new Session() {User = usr, App = appc, Scopes = new List<Scope>() { scp } };
+	dbCtx.Scopes.Add(scp);
+	dbCtx.AppClients.Add(appc);
+	dbCtx.Sessions.Add(sess);
 	dbCtx.SaveChanges();
 }
 
@@ -71,7 +77,7 @@ app.UseStaticFiles();
 
 
 var prefix = "/api/v1";
-app.MapGet(prefix+"/grants", ([FromServices] GrantStore gs) =>
+app.MapGet(prefix+"/grants", ([FromServices] ScopeStore gs) =>
 		gs.GetListAsync());
 
 
