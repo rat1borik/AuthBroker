@@ -18,6 +18,13 @@ using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Authorization;
 using BlazorBootstrap;
+using AuthBroker.Models;
+using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Principal;
+using System.Security.Cryptography;
+using Bogus.DataSets;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,6 +54,9 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddRazorPages();
 var app = builder.Build();
+
+
+RSA signKey = RSA.Create();
 
 using (var scope = app.Services.CreateScope()) {
 	var dbCtx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -82,15 +92,34 @@ app.MapGet(prefix+"/grants", ([FromServices] ScopeStore gs) =>
 
 
 
-app.MapGet(prefix + "/authorize", [ValidateAntiForgeryToken]  async (HttpContext ctx, [FromServices] AuthenticationStateProvider asp) => {
-	var authState = await ((CustomAuthenticationStateProvider)asp).GetAuthenticationStateAsync();
-	if (authState.User.Claims != null) {
-		return Results.Ok("Пользователь аутентифицирован.");
-	} else {
-		;
-		return Results.Redirect("/login");
+app.MapPost(prefix + "/token", async (AuthTokenRequest tReq, [FromServices] SessionStore ss, [FromServices] AuthenticationStateProvider st, HttpContext ctx) => {
+
+	switch (tReq.GrantType) {
+		case "authorization_code":
+			var sess = await ss.GetSession(tReq.Code);
+
+			if (sess != null && Convert.ToBase64String(sess.App.SecretKey) == tReq.Secret) {
+				var jwt = new JwtSecurityToken(
+				issuer: $"{ctx.Request.Scheme}://{ctx.Request.Host}{ctx.Request.PathBase}",
+				   audience: sess.App.Id.ToString(),
+				notBefore: DateTime.UtcNow,
+				claims: new List<Claim>() { new Claim(ClaimsIdentity.DefaultNameClaimType, sess.User.Login), new Claim(ClaimsIdentity.DefaultRoleClaimType, sess.User.IsAdmin?"Admin":"User") },
+				   expires: DateTime.UtcNow.Add(TimeSpan.FromHours(24)),
+				   signingCredentials: new  SigningCredentials(new RsaSecurityKey(signKey), SecurityAlgorithms.RsaSha256));
+				var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
+				return Results.Ok(new AuthTokenResponse() { AccessToken = encodedJwt, ExpiresIn = TimeSpan.FromHours(24).Seconds });
+				
+			}
+			return Results.StatusCode(401);
+		default:
+			return Results.BadRequest();
 	}
 
+});
+
+app.MapGet(prefix + "/token/validate", async () => {
+
+	return Results.Ok(new ValidationInfo() { PublicKey = signKey.ExportRSAPublicKeyPem(), Algorithm = signKey.SignatureAlgorithm });
 });
 
 

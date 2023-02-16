@@ -30,6 +30,14 @@
 	public string AppId { get;set; }
 
 	[Parameter]
+	[SupplyParameterFromQuery(Name = "response_type")]
+	public string ResponseType { get; set; }
+
+	[Parameter]
+	[SupplyParameterFromQuery(Name = "state")]
+	public string State { get; set; }
+
+	[Parameter]
 	[SupplyParameterFromQuery(Name = "scopes")]
 	public Guid[] RequestedScopes { get; set; }
 
@@ -43,15 +51,18 @@
 	private async Task Auth() {
 		var state = await asp.GetAuthenticationStateAsync();
 		var sess = await ss.CreateSession(state.User.Identity.Name, AppId, RequestedScopes);
-		Redirect(sess.Id.ToString());
+		if (sess != null) {
+			Redirect(sess.Id.ToString());
+		}
 	}
 
 	private void Redirect(string authCode) {
 		Uri redir;
-		if (Uri.TryCreate(RedirectURI, UriKind.Absolute, out redir)) {
+		if (Uri.TryCreate(RedirectURI, UriKind.Absolute, out redir) && ResponseType == "code") {
 			UriBuilder ub = new UriBuilder(redir);
 			var query = HttpUtility.ParseQueryString(ub.Query);
 			query["auth_code"] = authCode;
+			query["state"] = State;
 			ub.Query = query.ToString();
 			navManager.NavigateTo(ub.ToString(), true);
 

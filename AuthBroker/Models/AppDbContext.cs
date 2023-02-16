@@ -103,6 +103,15 @@ public class SessionStore : Store<Session> {
         return await _store.Include(c => c.Scopes).Include(c => c.App).Include(c => c.User).Where(row => row.User.Login == usr && row.App.Id == appId).FirstOrDefaultAsync();
 
 	}
+	public async Task<Session?> GetSession(Guid sessId) {
+		//var q = from session in _store.Include(app => app.Scopes)
+		//        where session.User.Login == usr && session.App.Id == appId
+		//        select session;
+		//return await q.FirstAsync();
+
+		return await _store.Include(c => c.Scopes).Include(c => c.App).Include(c => c.User).Where(row => row.Id == sessId).FirstOrDefaultAsync();
+
+	}
 
 	public async Task<Session?> CreateSession(string usr, string appId, Guid[] scopes) {
         var _app = (from app in _cx.AppClients

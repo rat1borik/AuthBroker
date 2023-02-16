@@ -6,6 +6,7 @@ using System.Reflection.Metadata;
 using System.Text.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Data;
 
 namespace AuthBroker.Model;
 
@@ -15,6 +16,8 @@ public class User {
 	public Guid Id { get; set; }
 	public string Login { get; set; }
 	public string Password { get; set; }
+
+	public bool IsAdmin { get; set; }
 	public JsonDocument? Credentials { get; set; }
 }
 
