@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Data;
 
-namespace AuthBroker.Model;
+namespace AuthBroker.Models;
 
 public class User {
 

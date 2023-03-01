@@ -1,9 +1,66 @@
 ﻿@page "/"
 
-<PageTitle>Index</PageTitle>
+@using AuthBroker.Models
+@inject SessionStore sstore
+@inject AuthenticationStateProvider asp
 
-<h1>Hello, world!</h1>
+<PageTitle>@Loc["Index"]</PageTitle>
 
-Welcome to your new app.
+<h1>@Loc["Index"]</h1>
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+@if (sessions == null) {
+            <p><em>@Loc["Loading..."]</em></p>
+} else {
+
+
+                <table class="table table-hover">
+            <thead>
+                <tr>
+                    <AuthorizeView Roles="Admin">
+                        <th>@Loc["User"]</th>
+                    </AuthorizeView>
+                    <th>@Loc["App name"]</th>
+                    <th>@Loc["Scopes"]</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var ss in sessions) {
+                        <tr>
+                            <AuthorizeView Roles="Admin">
+                                       <td class="align-middle">@ss.User.Login</td>
+                            </AuthorizeView>
+                            <td class="align-middle">@ss.App.Name</td>
+                            <td class="align-middle">@if (ss.Scopes != null) {
+                                @foreach (var scp in ss.Scopes) {
+                                        @scp.Name<br/>
+                                }                         
+                            }
+                            </td>
+                            <td class="d-flex justify-content-end"><button class="btn btn-dark" @onclick="() => Logout(ss)"><span class="oi oi-account-logout"></span></button></td>
+                        </tr>
+            }
+            </tbody>
+        </table>    
+}
+
+@code {
+    private string formName = "";
+    [CascadingParameter]
+    private List<Session>? sessions { get; set; }
+
+    private async Task Refresh() {
+        var state = await asp.GetAuthenticationStateAsync();
+        sessions = state.User.IsInRole("Admin") ? await sstore.GetListAsync() : await sstore.GetSessions(state.User.Identity.Name);
+    }
+
+    protected override async Task OnInitializedAsync() {
+        await Refresh();
+    }
+
+    private async Task Logout(Session ss) {
+        await sstore.RemoveAsync(ss);
+        await Refresh();
+    } 
+}
+

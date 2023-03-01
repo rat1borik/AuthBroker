@@ -3,7 +3,7 @@ using System.Data.Common;
 using Bogus;
 using System.Reflection.Metadata;
 
-namespace AuthBroker.Model;
+namespace AuthBroker.Models;
 
 public class Vehicle {
     public Guid Id { get; set; }

@@ -1,12 +1,12 @@
 ﻿@page "/logout"
 
 @using AuthBroker.Authentication
-@using AuthBroker.Model;
+@using AuthBroker.Models;
 @inject UserAccStore us;
 @inject NavigationManager navManager;
 @inject AuthenticationStateProvider authStateProvider;
 
-<span>Logging out</span>
+<span>@Loc["Logging out"]</span>
 
 @code {
 

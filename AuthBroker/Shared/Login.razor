@@ -1,19 +1,20 @@
 ﻿@using AuthBroker.Authentication
-@using AuthBroker.Model;
+@using AuthBroker.Models;
 @inject UserAccStore us;
 @inject IJSRuntime js;
 @inject AuthenticationStateProvider authStateProvider;
 @inject NavigationManager navManager;
+
 <section class="vh-100 gradient-custom">
 		<div class="row g-0 d-flex justify-content-center align-items-center h-100">
 	  <div class="col-12 col-md-8 col-lg-6 col-xl-5"style=" max-width: 450px">
 		<div class="card bg-dark text-white login-box " style="border-radius: 1rem;">
 			<ul class="nav nav-pills nav-justified my-2 mx-2" id="myTab" role="tablist">
   <li class="nav-item" role="presentation" >
-	<button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">Вход</button>
+	<button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">@Loc["Signing in"]</button>
   </li>
   <li class="nav-item" role="presentation">
-	<button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">Регистрация</button>
+	<button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">@Loc["Signing up"]</button>
   </li>
 
 </ul>
@@ -26,16 +27,16 @@
 			  <span class="oi oi-key mb-5 fs-1 text-white-50"></span>
 
 			  <div class="form-outline form-white mb-3">
-				<input @bind="model.UserName" type="text" id="typeEmailX" placeholder="Логин" class="form-control" />
+				<input @bind="model.UserName" type="text" id="typeEmailX" placeholder="@Loc["Login"]" class="form-control" />
 			  </div>
 
 			  <div class="form-outline form-white mb-3">
-				<input @bind="model.Password"  type="password" id="typePasswordX" placeholder="Пароль" class="form-control" />
+				<input @bind="model.Password"  type="password" id="typePasswordX" placeholder="@Loc["Password"]" class="form-control" />
 			  </div>
 
 								@*<p class="small mb-5 pb-lg-2"><a class="text-white-50" href="#!">Forgot password?</a></p>*@
 
-			  <button class="btn btn-outline-primary btn-lg px-5 mt-5" type="submit"  @onclick="@Authenticate">Войти</button>
+			  <button class="btn btn-outline-primary btn-lg px-5 mt-5" type="submit"  @onclick="@Authenticate">@Loc["Sign in"]</button>
 
 			</div>
 
@@ -50,24 +51,24 @@
 			  <span class="oi oi-account-login mb-5 fs-1 text-white-50"></span>
 
 			  <div class="form-outline form-white mb-3">
-				<input type="text" id="typeEmailX" placeholder="Логин" class="form-control"/>
+				<input type="text" id="typeEmailX" placeholder="@Loc["Login"]" class="form-control"/>
 			  </div>
 
 			  <div class="form-outline form-white mb-3">
-				<input type="email" id="typeEmailX" placeholder="E-mail" class="form-control" />
+				<input type="email" id="typeEmailX" placeholder="@Loc["E-mail"]" class="form-control" />
 			  </div>
 
 			  <div class="form-outline form-white mb-3">
-				<input type="password" id="typePasswordX" @onpaste:preventDefault="true" placeholder="Придумайте пароль" class="form-control" />
+				<input type="password" id="typePasswordX" @onpaste:preventDefault="true" placeholder="@Loc["Create password"]" class="form-control" />
 			  </div>
 
 			  <div class="form-outline form-white mb-3">
-				<input type="password" id="typePasswordX" @onpaste:preventDefault="true" placeholder="Повторите пароль" class="form-control" />
+				<input type="password" id="typePasswordX" @onpaste:preventDefault="true" placeholder="@Loc["Repeat password"]" class="form-control" />
 			  </div>
 
 									@*<p class="small mb-5 pb-lg-2"><a class="text-white-50" href="#!">Forgot password?</a></p>*@
 
-			  <button class="btn btn-outline-primary btn-lg px-5 mt-5" type="button" @onclick:preventDefault>Зарегистрироваться</button>
+			  <button class="btn btn-outline-primary btn-lg px-5 mt-5" type="button" @onclick:preventDefault>@Loc["Sign up"]</button>
 
 			</div>
 
@@ -99,7 +100,7 @@
 			var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
 			await customAuthStateProvider.UpdateAuthenticationState(new UserSession {
 					UserName = userAccount.Login,
-					Role = "User"
+					Role = "Admin"
 				});
 			navManager.NavigateTo("/", true);
 	}

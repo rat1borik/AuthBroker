@@ -1,27 +1,41 @@
 ﻿@page "/auth"
 
 @using System.Web
-@using Model
+@using Models
 @inject NavigationManager navManager
 @inject SessionStore ss
+@inject AppClientStore acs
+@inject ScopeStore scs
 @inject AuthenticationStateProvider asp
 
-<h3>Authorize</h3>
-<p>@AppId</p>
-@foreach (var a in RequestedScopes.ToList()) {
-		<p> @a.ToString()</p>
-}
-@if (CurrentSession != null) {
-	<h4>Current session:</h4>
-	<p>App: @CurrentSession.App.Name</p>
-	<p>Scopes:</p>
-	@if (CurrentSession.Scopes != null) {
-		@foreach (var scope in CurrentSession.Scopes) {
-			<p>@scope.Name</p>
+<h3>@Loc["Authorize"]</h3>
+@if (AuthApp != null)
+{
+	<p>@Loc["App"]: @AuthApp.Name</p>
+	@if (CurrentSession != null)
+	{
+		<h4>@Loc["Current session:"]</h4>
+		<p>@Loc["Scopes:"]</p>
+		@if (CurrentSession.Scopes != null)
+		{
+			@foreach (var scope in CurrentSession.Scopes)
+			{
+				<p>@scope.Name</p>
+			}
 		}
 	}
+	else
+	{
+		@if (AuthScopes != null) {
+			<p>@Loc["Requested scopes"]</p>
+			@foreach (var scope in AuthScopes) {
+				<p>@scope.Name</p>
+			}
+		}
+		<Button Color="ButtonColor.Primary" @onclick="@Auth">Accept</Button>
+	}
 } else {
-	<Button Color="ButtonColor.Primary" @onclick="@Auth">Accept</Button>
+	<p>@Loc["This App does not exists"]</p>
 }
 
 @code {
@@ -34,12 +48,10 @@
 	public string ResponseType { get; set; }
 
 	[Parameter]
-	[SupplyParameterFromQuery(Name = "state")]
-	public string State { get; set; }
-
-	[Parameter]
 	[SupplyParameterFromQuery(Name = "scopes")]
-	public Guid[] RequestedScopes { get; set; }
+	public string[] RequestedScopes { get; set; }
+
+	Guid[] _requestedScopes;
 
 	[Parameter]
 	[SupplyParameterFromQuery(Name = "redirect_uri")]
@@ -47,10 +59,12 @@
 
 	[CascadingParameter]
 	private Session? CurrentSession { get; set; }
+	private AppClient? AuthApp { get; set; }
+	private Scope?[]? AuthScopes { get; set; }
 
 	private async Task Auth() {
 		var state = await asp.GetAuthenticationStateAsync();
-		var sess = await ss.CreateSession(state.User.Identity.Name, AppId, RequestedScopes);
+		var sess = await ss.CreateSession(state.User.Identity.Name, AppId, _requestedScopes);
 		if (sess != null) {
 			Redirect(sess.Id.ToString());
 		}
@@ -62,7 +76,6 @@
 			UriBuilder ub = new UriBuilder(redir);
 			var query = HttpUtility.ParseQueryString(ub.Query);
 			query["auth_code"] = authCode;
-			query["state"] = State;
 			ub.Query = query.ToString();
 			navManager.NavigateTo(ub.ToString(), true);
 
@@ -70,8 +83,17 @@
 	}
 
 	protected override async Task OnInitializedAsync() {
+		_requestedScopes = RequestedScopes.ToList().ConvertAll<Guid?>(el =>
+		{
+			Guid code;
+			if (Guid.TryParse(el, out code)) return code;
+			return null;
+		}).Where(el => el != null).ToList().ConvertAll<Guid>(el => (Guid)el).ToArray();
+
 		var state = await asp.GetAuthenticationStateAsync();
-		CurrentSession = await ss.GetSession(AppId, state.User.Identity.Name);
+		CurrentSession = await ss.GetSessionAsync(AppId, state.User.Identity.Name);
+		AuthApp = await acs.GetAppClientAsync(AppId);
+		AuthScopes = _requestedScopes.ToList().ConvertAll<Scope?>(el => scs.GetScopeAsync(el).Result).ToArray();
 		if (CurrentSession != null)
 			Redirect(CurrentSession.Id.ToString());
 

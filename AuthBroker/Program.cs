@@ -1,4 +1,4 @@
-using AuthBroker.Model;
+using AuthBroker.Models;
 using AuthBroker.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -31,9 +31,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddBlazoredLocalStorage();
-         
+		 
 builder.Services.AddBlazorBootstrap();
-
+builder.Services.AddLocalization();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddOptions();
 builder.Services.AddEndpointsApiExplorer();
@@ -54,6 +54,10 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddRazorPages();
 var app = builder.Build();
+
+app.UseRequestLocalization(new RequestLocalizationOptions()
+	.AddSupportedCultures(new[] { "en-US", "ru-RU" })
+	.AddSupportedUICultures(new[] { "en-US", "ru-RU" }));
 
 
 RSA signKey = RSA.Create();
@@ -107,7 +111,7 @@ app.MapPost(prefix + "/token", async (AuthTokenRequest tReq, [FromServices] Sess
 				   expires: DateTime.UtcNow.Add(TimeSpan.FromHours(24)),
 				   signingCredentials: new  SigningCredentials(new RsaSecurityKey(signKey), SecurityAlgorithms.RsaSha256));
 				var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
-				return Results.Ok(new AuthTokenResponse() { AccessToken = encodedJwt, ExpiresIn = TimeSpan.FromHours(24).Seconds });
+				return Results.Ok(new AuthTokenResponse() { AccessToken = encodedJwt, ExpiresIn = TimeSpan.FromHours(24).Seconds, TokenType = "Bearer" });
 				
 			}
 			return Results.StatusCode(401);
@@ -117,8 +121,7 @@ app.MapPost(prefix + "/token", async (AuthTokenRequest tReq, [FromServices] Sess
 
 });
 
-app.MapGet(prefix + "/token/validate", async () => {
-
+app.MapGet(prefix + "/token/validate", () => {
 	return Results.Ok(new ValidationInfo() { PublicKey = signKey.ExportRSAPublicKeyPem(), Algorithm = signKey.SignatureAlgorithm });
 });
 

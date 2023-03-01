@@ -40,6 +40,10 @@ bld/
 !/AuthBroker/wwwroot/App.scss
 !/AuthBroker/wwwroot/favicon.ico
 
+/TestClient/wwwroot/*
+!/TestClient/wwwroot/App.scss
+!/TestClient/wwwroot/favicon.png
+
 
 # Visual Studio 2017 auto generated files
 Generated\ Files/

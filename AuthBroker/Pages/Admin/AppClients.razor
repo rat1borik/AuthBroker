@@ -1,11 +1,10 @@
 ﻿@page "/appClients"
 @attribute [Authorize(Roles = "Admin")]
 
-<PageTitle>Admin panel: AppClients</PageTitle>
+<PageTitle>@Loc["Admin panel: AppClients"]</PageTitle>
 
-@using AuthBroker.Model
-@using AuthBroker.Forms
-@inject Model.AppClientStore acs
+@using AuthBroker.Models
+@inject AppClientStore acs
 @inject IJSRuntime jsr
 
 <!-- Modal -->
@@ -13,35 +12,35 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="addModalLabel">Add new App</h5>
+        <h5 class="modal-title" id="addModalLabel">@Loc["Add new app"]</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
         <form>
           <div class="modal-body mb-3">
-            <label for="recipient-name" class="col-form-label" >Name</label>
+            <label for="recipient-name" class="col-form-label" >@Loc["Name"]</label>
             <input  type="text" class="form-control" id="recipient-name" @bind="@formName" required>
               </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @onclick="@Add">Save changes</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@Loc["Close"]</button>
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @onclick="@Add">@Loc["Save"]</button>
           </div>
         </form>
     </div>
   </div>
 </div>
 
-    <h1>AppClients</h1>
+    <h1>@Loc["App Clients"]</h1>
 
 @if (appClients == null) {
-    <p><em>Loading...</em></p>
+    <p><em>@Loc["Loading..."]</em></p>
 } else {
         
 
             <table class="table table-hover">
         <thead>
             <tr>
-                <th>App Name</th>
-                <th>App Id</th>
+                    <th>@Loc["App name"]</th>
+                    <th>@Loc["App Id"]</th>
                 <th></th>
             </tr>
         </thead>
@@ -57,12 +56,11 @@
     </table>
 
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
-      Add
+        @Loc["Add"]
     </button>              
 }
 
-<Modal @ref="secretKeyModal" Title="Your App`s Secret Key!">
-    <HeaderTemplate>You will not see it again</HeaderTemplate>
+<Modal @ref="secretKeyModal" Title="@Loc["Your App`s secret key"]">
     <BodyTemplate>
         @secretKey
         <button class="btn btn-dark" @onclick="()=>CopyToClipboard(secretKey)"><span class="oi oi-clipboard"></span></button>
@@ -107,6 +105,6 @@
 
     private async Task CopyToClipboard(string text) {
         await jsr.InvokeVoidAsync("navigator.clipboard.writeText", text);
-        ToastService.Notify(new(ToastType.Success, "Copied!"));
+        ToastService.Notify(new(ToastType.Success, Loc["Copied"]));
     }
 }

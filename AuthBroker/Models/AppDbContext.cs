@@ -8,7 +8,7 @@ using System.Reflection.Metadata;
 using System.Text.Json.Nodes;
 using System.Linq;
 
-namespace AuthBroker.Model;
+namespace AuthBroker.Models;
 
 public class AppDbContext : DbContext {
 	public DbSet<User> Users { get; set; }
@@ -49,16 +49,16 @@ public abstract class Store<T> where T : class {
 
     public Store(AppDbContext cx) { _cx = cx; }
 
-    public async Task<List<T>> GetListAsync() {
+    public virtual async Task<List<T>?> GetListAsync() {
         return await _store.ToListAsync();
     }
 
-    public async Task AddAsync(T item) {
+    public virtual async Task AddAsync(T item) {
         await _store.AddAsync(item);
         await _cx.SaveChangesAsync();
     }
 
-    public async Task RemoveAsync(T ac) {
+    public virtual async Task RemoveAsync(T ac) {
         _store.Remove(ac);
         await _cx.SaveChangesAsync();
     }
@@ -80,11 +80,19 @@ public class ScopeStore : Store<Scope> {
     public ScopeStore(AppDbContext cx) : base(cx) {
         _store = cx.Scopes;
     }
+
+    public async Task<Scope?> GetScopeAsync(Guid scId) {
+        return await _store.Where(scp => scp.Id == scId).FirstOrDefaultAsync();
+    }
 }
 public class AppClientStore : Store<AppClient> {
 
     public AppClientStore(AppDbContext cx) : base(cx) {
         _store = cx.AppClients;
+    }
+
+    public async Task<AppClient?> GetAppClientAsync(string appId) {
+        return await _store.Where(app => app.Id == appId).FirstOrDefaultAsync();
     }
 }
 
@@ -94,7 +102,7 @@ public class SessionStore : Store<Session> {
 		_store = cx.Sessions;
 	}
 
-    public async Task<Session?> GetSession(string appId, string usr) {
+    public async Task<Session?> GetSessionAsync(string appId, string usr) {
         //var q = from session in _store.Include(app => app.Scopes)
         //        where session.User.Login == usr && session.App.Id == appId
         //        select session;
@@ -103,7 +111,28 @@ public class SessionStore : Store<Session> {
         return await _store.Include(c => c.Scopes).Include(c => c.App).Include(c => c.User).Where(row => row.User.Login == usr && row.App.Id == appId).FirstOrDefaultAsync();
 
 	}
-	public async Task<Session?> GetSession(Guid sessId) {
+
+    public async Task<List<Session>?> GetSessions(string usr) {
+        //var q = from session in _store.Include(app => app.Scopes)
+        //        where session.User.Login == usr && session.App.Id == appId
+        //        select session;
+        //return await q.FirstAsync();
+
+        return await _store.Include(c => c.Scopes).Include(c => c.App).Include(c => c.User).Where(row => row.User.Login == usr).ToListAsync();
+
+    }
+
+    public override async Task<List<Session>?> GetListAsync() {
+        //var q = from session in _store.Include(app => app.Scopes)
+        //        where session.User.Login == usr && session.App.Id == appId
+        //        select session;
+        //return await q.FirstAsync();
+
+        return await _store.Include(c => c.Scopes).Include(c => c.App).Include(c => c.User).ToListAsync();
+
+    }
+
+    public async Task<Session?> GetSession(Guid sessId) {
 		//var q = from session in _store.Include(app => app.Scopes)
 		//        where session.User.Login == usr && session.App.Id == appId
 		//        select session;

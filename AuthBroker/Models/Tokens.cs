@@ -4,8 +4,6 @@ namespace AuthBroker.Models;
 public class AuthTokenRequest {
 	public string GrantType { get; set; }
 
-	public string RedirectURI { get; set; }
-
 	public Guid Code { get; set; }
 
 	public string Secret { get; set; }
@@ -13,6 +11,7 @@ public class AuthTokenRequest {
 public class AuthTokenResponse {
 	public string AccessToken { get; set; }
 	public int ExpiresIn { get; set; }
+	public string TokenType { get; set; }
 }
 
 public class ValidationInfo {

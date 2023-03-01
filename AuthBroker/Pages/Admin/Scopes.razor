@@ -2,45 +2,44 @@
 @attribute [Authorize(Roles = "Admin")]
 
 
-<PageTitle>Admin panel: Scopes</PageTitle>
+<PageTitle>@Loc["Admin panel: Scopes"]</PageTitle>
 
-@using AuthBroker.Model
-@using AuthBroker.Forms
-@inject Model.ScopeStore gs
+@using AuthBroker.Models
+@inject ScopeStore gs
 
 <!-- Modal -->
 <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="addModalLabel">Add new Scope</h5>
+        <h5 class="modal-title" id="addModalLabel">@Loc["Add new scope"]</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
         <form>
           <div class="modal-body mb-3">
-            <label for="recipient-name" class="col-form-label" >Name</label>
+            <label for="recipient-name" class="col-form-label" >@Loc["Name"]</label>
             <input  type="text" class="form-control" id="recipient-name" @bind="@formName" required>
               </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @onclick="@Add">Save changes</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@Loc["Close"]</button>
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @onclick="@Add">@Loc["Save"]</button>
           </div>
         </form>
     </div>
   </div>
 </div>
 
-    <h1>Scopes</h1>
+    <h1>@Loc["Scopes"]</h1>
 
 @if (scopes == null) {
-    <p><em>Loading...</em></p>
+        <p><em>@Loc["Loading..."]</em></p>
 } else {
         
 
             <table class="table table-hover">
         <thead>
             <tr>
-                <th>Scope Name</th>
+                    <th>@Loc["Scope name"]</th>
                 <th></th>
             </tr>
         </thead>
@@ -55,7 +54,7 @@
     </table>
 
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
-      Add
+        @Loc["Add"]
     </button>              
 }
 
