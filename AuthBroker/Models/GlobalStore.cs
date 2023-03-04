@@ -42,9 +42,10 @@ public class AppClient {
 	public byte[] SecretKey { get; set; }
 	public string Name { get; set; }
 
+    public Uri[] AllowedRedirectUris { get; set; }
 
 
-	public AppClient() {
+    public AppClient() {
         PrepareKey();
     }
 

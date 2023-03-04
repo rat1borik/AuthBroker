@@ -53,6 +53,8 @@
 
 	Guid[] _requestedScopes;
 
+	[Inject] protected ToastService ToastService { get; set; }
+
 	[Parameter]
 	[SupplyParameterFromQuery(Name = "redirect_uri")]
 	public string? RedirectURI { get; set; }
@@ -73,6 +75,10 @@
 	private void Redirect(string authCode) {
 		Uri redir;
 		if (Uri.TryCreate(RedirectURI, UriKind.Absolute, out redir) && ResponseType == "code") {
+			if (AuthApp.AllowedRedirectUris.Where(uri=>uri.IsBaseOf(redir)).FirstOrDefault() == null) {
+				ToastService.Notify(new ToastMessage(ToastType.Danger, @Loc["Something went wrong (Invalid request data)"]));
+				return;
+			}
 			UriBuilder ub = new UriBuilder(redir);
 			var query = HttpUtility.ParseQueryString(ub.Query);
 			query["auth_code"] = authCode;

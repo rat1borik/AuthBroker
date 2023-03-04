@@ -69,7 +69,7 @@ using (var scope = app.Services.CreateScope()) {
 
 	var usr = new User() { Login = "228775", Password = "123456" };
 	dbCtx.Users.Add(usr);
-	var appc = new AppClient() { Name = "341342143", Id = "1" };
+	var appc = new AppClient() { Name = "341342143", Id = "1", AllowedRedirectUris = new Uri[]{ new Uri("https://localhost:7156/") } };
 	var scp = new Scope() { Name = "sdfasgdsfa" };
 	var sess = new Session() {User = usr, App = appc, Scopes = new List<Scope>() { scp } };
 	dbCtx.Scopes.Add(scp);

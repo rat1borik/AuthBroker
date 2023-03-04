@@ -28,7 +28,7 @@
 		@Body
 		@{
 
-			@if (!navMan.Uri.Contains(navMan.BaseUri+"auth"))
+			@if (!navMan.Uri.StartsWith(navMan.BaseUri+"auth"))
 				navMan.NavigateTo("auth");
 		}
 	</NotAuthorized>

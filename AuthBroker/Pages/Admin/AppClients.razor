@@ -17,9 +17,11 @@
       </div>
         <form>
           <div class="modal-body mb-3">
-            <label for="recipient-name" class="col-form-label" >@Loc["Name"]</label>
-            <input  type="text" class="form-control" id="recipient-name" @bind="@formName" required>
-              </div>
+                <label for="recipient-name" class="col-form-label" >@Loc["Name"]</label>
+                <input  type="text" class="form-control" id="recipient-name" @bind="@formName" required>
+                <label for="recipient-uris" class="col-form-label">@Loc["Name"]</label>
+                <textarea class="form-control" id="recipient-uris" @bind="@formUris" required></textarea>
+          </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@Loc["Close"]</button>
             <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @onclick="@Add">@Loc["Save"]</button>
@@ -41,6 +43,7 @@
             <tr>
                     <th>@Loc["App name"]</th>
                     <th>@Loc["App Id"]</th>
+                <th>@Loc["Allowed Redirect Uris"]</th>
                 <th></th>
             </tr>
         </thead>
@@ -49,6 +52,11 @@
                 <tr class="col">
                         <td class="align-middle">@_app.Name</td>
                         <td class="align-middle">@_app.Id <button class="btn btn-sm btn-dark " @onclick="()=>CopyToClipboard(_app.Id)"><span class="oi oi-clipboard"></span></button></td>
+                        <td class="align-middle">
+                            @foreach(var aru in _app.AllowedRedirectUris) {
+                                @aru.ToString()<br />
+                            }
+                        </td>
                         <td class="d-flex justify-content-end"><button class="btn btn-dark" @onclick="() => Remove(_app)"><span class="oi oi-trash"></span></button></td>
                 </tr>
             }
@@ -71,6 +79,7 @@
     [Inject] protected ToastService ToastService { get; set; }
 
     private string formName = "";
+    private string formUris = "";
     private string secretKey = "";
     private Modal? secretKeyModal;
 
@@ -86,7 +95,12 @@
     }
 
     private async Task Add() {
-        var appClient = new AppClient() { Name = formName };
+        var appClient = new AppClient() { Name = formName, AllowedRedirectUris = formUris.Split("\n").ToList().ConvertAll<Uri?>(el=> {
+            Uri uri;
+            if (Uri.TryCreate(el, UriKind.Absolute, out uri))
+                return uri;
+            return null;
+        }).Where(el=>el!=null).ToArray() };
         await acs.AddAsync(appClient);
         secretKey = appClient.GetSecretKey();
         await secretKeyModal.ShowAsync();

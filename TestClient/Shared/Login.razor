@@ -44,7 +44,7 @@
 	public string? State { get; set; }
 
 	private async Task SignIn() {
-		navManager.NavigateTo(string.Format("https://localhost:7276/auth?app_id={0}&response_type=code&redirect_uri={1}auth?state={2}", "5244512827464867791", navManager.BaseUri, 1), true);
+		navManager.NavigateTo(string.Format("https://localhost:7276/auth?app_id={0}&response_type=code&redirect_uri={1}auth?state={2}", "1", navManager.BaseUri, 1), true);
 	}
 
 	protected override async Task OnInitializedAsync() {

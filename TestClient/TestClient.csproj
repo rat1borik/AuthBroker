@@ -20,4 +20,8 @@
     <PackageReference Include="BuildWebCompiler2022" Version="1.14.10" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\" />
+  </ItemGroup>
+
 </Project>
