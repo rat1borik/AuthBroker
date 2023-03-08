@@ -3,6 +3,8 @@
 @inject IHttpClientFactory ClientFactory
 @inject IJSRuntime js;
 @inject NavigationManager navManager;
+@inject StateProvider sp;
+@inject IConfiguration cfg;
 
 <section class="vh-100 gradient-custom">
 	@if (AuthCode != null) {
@@ -44,18 +46,22 @@
 	public string? State { get; set; }
 
 	private async Task SignIn() {
-		navManager.NavigateTo(string.Format("https://localhost:7276/auth?app_id={0}&response_type=code&redirect_uri={1}auth?state={2}", "1", navManager.BaseUri, 1), true);
+		navManager.NavigateTo(string.Format("https://localhost:7276/auth?app_id={0}&response_type=code&redirect_uri={1}auth?state={2}", cfg.GetSection("SSO")["ClientId"], navManager.BaseUri, sp.GetState().Base64UrlEncode()), true);
 	}
 
 	protected override async Task OnInitializedAsync() {
 		Guid code;
 
 		if (AuthCode != null && Guid.TryParse(AuthCode, out code)) {
+			if (State == null || !sp.ValidateState(State.Base64UrlDecode())) {
+				ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Something went wrong"] + ": " + Loc["session time has expired"]));
+				return;
+			}
 			var request = new HttpRequestMessage(HttpMethod.Post,
 					"https://localhost:7276/api/v1/token");
 			request.Headers.Add("Accept", "application/json");
 			request.Headers.Add("User-Agent", "TestApp");
-			request.Content = JsonContent.Create(new AuthTokenRequest { GrantType = "authorization_code", Code = code, Secret = "4nz555biRA1ra1+8x2rzuqvjME69NG2kDnxMux8LJL8=" });
+			request.Content = JsonContent.Create(new AuthTokenRequest { GrantType = "authorization_code", Code = code, Secret = cfg.GetSection("SSO")["ClientSecret"] });
 
 			var client = ClientFactory.CreateClient();
 

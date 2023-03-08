@@ -94,6 +94,12 @@ public class AppClientStore : Store<AppClient> {
     public async Task<AppClient?> GetAppClientAsync(string appId) {
         return await _store.Where(app => app.Id == appId).FirstOrDefaultAsync();
     }
+
+	public override async Task RemoveAsync(AppClient ac) {
+		_store.Remove(ac);
+        _cx.Sessions.RemoveRange(_cx.Sessions.Where(sess => sess.App == ac));
+		await _cx.SaveChangesAsync();
+	}
 }
 
 public class SessionStore : Store<Session> {
