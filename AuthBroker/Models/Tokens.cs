@@ -8,6 +8,14 @@ public class AuthTokenRequest {
 
 	public string Secret { get; set; }
 }
+
+public class AuthTokenAction {
+
+	public string Secret { get; set; }
+
+	public string Token { get; set; }
+
+}
 public class AuthTokenResponse {
 	public string AccessToken { get; set; }
 	public int ExpiresIn { get; set; }

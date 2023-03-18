@@ -203,6 +203,14 @@ public class AccessTokenStore : Store<AccessToken> {
 	public AccessTokenStore(AppDbContext cx) : base(cx) {
 		_store = cx.AccessTokens;
 	}
+
+	public async Task<AccessToken?> GetByAccessToken(string token) {
+		return await _store.Where(scp => scp.Token.Key == token).Include(c => c.Session).ThenInclude(c => c.App).FirstOrDefaultAsync();
+	}
+
+    public async Task<List<AccessToken>?> GetBySession(Session sess) {
+        return await _store.Where(scp => scp.Session == sess).ToListAsync();
+    }
 }
 
 public class RandomTokenGenerator {

@@ -11,6 +11,7 @@
 @if (sessions == null) {
             <p><em>@Loc["Loading..."]</em></p>
 } else {
+    <Modal @ref="modal" />
 
 
                 <table class="table table-hover">
@@ -21,6 +22,7 @@
                     </AuthorizeView>
                     <th>@Loc["App name"]</th>
                     <th>@Loc["Scopes"]</th>
+                    <th>@Loc["Details"]</th>
                     <th></th>
                 </tr>
             </thead>
@@ -37,6 +39,7 @@
                                 }                         
                             }
                             </td>
+                        <th><Button Color="ButtonColor.Primary" @onclick="()=>ShowDetails(ss)"><span class="oi oi-ellipses"></span></Button></th>
                             <td class="d-flex justify-content-end"><button class="btn btn-dark" @onclick="() => Logout(ss)"><span class="oi oi-account-logout"></span></button></td>
                         </tr>
             }
@@ -45,7 +48,9 @@
 }
 
 @code {
+    private Modal modal = default!;
     private string formName = "";
+
     [CascadingParameter]
     private List<Session>? sessions { get; set; }
 
@@ -62,5 +67,12 @@
         await sstore.RemoveAsync(ss);
         await Refresh();
     } 
+
+    private async Task ShowDetails(Session ss) {
+        var parameters = new Dictionary<string, object>();
+        parameters.Add("Session", ss);
+        await modal.ShowAsync<ModalDetails>(title: Loc["Details"], parameters: parameters);
+
+    }
 }
 

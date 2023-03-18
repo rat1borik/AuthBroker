@@ -2,13 +2,16 @@
 
 @using System.IdentityModel.Tokens.Jwt;
 @using Microsoft.IdentityModel.Tokens;
+@using Microsoft.IdentityModel;
 @using System.Security.Cryptography;
+@using TestClient.Authentication;
 
 @inject IHttpClientFactory ClientFactory
 @inject IJSRuntime js;
 @inject NavigationManager navManager;
 @inject StateProvider sp;
 @inject IConfiguration cfg;
+@inject TokenValidator tokenValidator;
 
 <section class="vh-100 gradient-custom">
 	@if (AuthCode != null) {
@@ -45,11 +48,6 @@
 		public string TokenType { get; set; }
 	}
 
-	public class ValidationInfo {
-		public string PublicKey { get; set; }
-		public string Algorithm { get; set; }
-	}
-
 	[Inject] protected ToastService ToastService { get; set; }
 
 	[Parameter]
@@ -65,65 +63,44 @@
 	}
 
 	protected override async Task OnInitializedAsync() {
-		if (AuthCode != null) {
-			if (State == null || !sp.ValidateState(State.Base64UrlDecode())) {
-				ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Something went wrong"] + ": " + Loc["session time has expired"]));
-				return;
-			}
-			var request = new HttpRequestMessage(HttpMethod.Post,
-					"https://localhost:7276/api/v1/token");
-			request.Headers.Add("Accept", "application/json");
-			request.Headers.Add("User-Agent", "TestApp");
-			request.Content = JsonContent.Create(new AuthTokenRequest { GrantType = "authorization_code", Code = AuthCode, Secret = cfg.GetSection("SSO")["ClientSecret"] });
-
-			var client = ClientFactory.CreateClient();
-
-			var response = await client.SendAsync(request);
-
-			if (response.IsSuccessStatusCode && response.Content != null) {
-				var result = await response.Content.ReadFromJsonAsync<AuthTokenResponse>();
-				var jwtHandler = new JwtSecurityTokenHandler();
-				SecurityToken securityToken;
-				try {
-					jwtHandler.ValidateToken(result.AccessToken, await GetValidationParameters(), out securityToken);
-					if (securityToken != null)
-						ToastService.Notify(new ToastMessage(ToastType.Success, "Success"));
-				} catch (SecurityTokenException) {
-					ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Incorrect authentification data"]));
-				} catch (ArgumentNullException) {
-					ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Incorrect authentification data"]));
+		if ((await asp.GetAuthenticationStateAsync()).IsAnonymous()) {
+			if (AuthCode != null) {
+				if (State == null || !sp.ValidateState(State.Base64UrlDecode())) {
+					ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Something went wrong"] + ": " + Loc["session time has expired"]));
+					return;
 				}
-			} else {
-				ToastService.Notify(new ToastMessage(ToastType.Danger, response.ReasonPhrase));
-			}
-		}
-	}
+				var request = new HttpRequestMessage(HttpMethod.Post,
+						"https://localhost:7276/api/v1/token");
+				request.Headers.Add("Accept", "application/json");
+				request.Headers.Add("User-Agent", "TestApp");
+				request.Content = JsonContent.Create(new AuthTokenRequest { GrantType = "authorization_code", Code = AuthCode, Secret = cfg.GetSection("SSO")["ClientSecret"] });
 
-	private async Task<TokenValidationParameters> GetValidationParameters() {
-		var request = new HttpRequestMessage(HttpMethod.Get,
-					"https://localhost:7276/api/v1/token/validate");
-		request.Headers.Add("Accept", "application/json");
-		request.Headers.Add("User-Agent", "TestApp");
-		var client = ClientFactory.CreateClient();
-		var response = await client.SendAsync(request);
-		if (response.IsSuccessStatusCode && response.Content != null) {
-			var result = await response.Content.ReadFromJsonAsync<ValidationInfo>();
+				var client = ClientFactory.CreateClient();
 
-			RSA key = RSA.Create();
-			int cnt;
-			key.ImportRSAPublicKey(Convert.FromBase64String(result.PublicKey), out cnt);
-			if (cnt > 0) {
-				return new TokenValidationParameters() {
-						ValidateLifetime = true,
-						ValidateAudience = true,
-						ValidateIssuer = true,
-						ValidIssuer = "https://localhost:7276",
-						ValidAudience = cfg.GetSection("SSO")["ClientId"],
-						IssuerSigningKey = new RsaSecurityKey(key)
-				};
+				var response = await client.SendAsync(request);
+
+				if (response.IsSuccessStatusCode && response.Content != null) {
+					var result = await response.Content.ReadFromJsonAsync<AuthTokenResponse>();
+					var jwtHandler = new JwtSecurityTokenHandler();
+					SecurityToken securityToken;
+					try {
+						var claims = jwtHandler.ValidateToken(result.AccessToken, await tokenValidator.GetValidationParameters(), out securityToken);
+						if (securityToken != null&& claims != null) {
+							ToastService.Notify(new ToastMessage(ToastType.Success, "Success"));
+							await ((CustomAuthenticationStateProvider)asp).UpdateAuthenticationState(result.AccessToken);
+							navManager.NavigateTo("/");
+						}
+					} catch (SecurityTokenException) {
+						ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Incorrect authentification data"]));
+					} catch (ArgumentNullException) {
+						ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Incorrect authentification data"]));
+					}
+				} else {
+					ToastService.Notify(new ToastMessage(ToastType.Danger, response.ReasonPhrase));
+				}
 			}
-			
+		} else {
+			navManager.NavigateTo("/");
 		}
-		return null;
 	}
 }

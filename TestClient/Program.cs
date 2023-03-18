@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.Components.Web;
+using TestClient.Authentication;
 using TestClient.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,7 +21,10 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddAntiforgery();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
+builder.Services.AddTransient<TokenValidator>();
 builder.Services.AddSingleton<StateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
+
 
 if (builder.Configuration.GetSection("SSO")["ClientId"] == null || builder.Configuration.GetSection("SSO")["ClientSecret"] == null) {
 	throw new Exception("No ClientId or ClientSecret in configuration file");

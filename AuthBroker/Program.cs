@@ -65,7 +65,7 @@ RSA signKey = RSA.Create();
 
 using (var scope = app.Services.CreateScope()) {
 	var dbCtx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-	dbCtx.Database.EnsureDeleted();
+	//dbCtx.Database.EnsureDeleted();
 	dbCtx.Database.EnsureCreated();
 
 	//var usr = new User() { Login = "228775", Password = "123456" };
@@ -134,6 +134,15 @@ app.MapGet(prefix + "/token/validate", () => {
 	return Results.Ok(new ValidationInfo() { PublicKey = Convert.ToBase64String(signKey.ExportRSAPublicKey()), Algorithm = signKey.SignatureAlgorithm });
 });
 
+app.MapPost(prefix + "/token/invalidate", async (AuthTokenAction tReq, [FromServices] AccessTokenStore ats, [FromServices] SessionStore ss) => {
+	var token = await ats.GetByAccessToken(tReq.Token);
+
+	if (Convert.ToBase64String(token.Session.App.SecretKey) == tReq.Secret) {
+		await ats.RemoveAsync(token);
+		return Results.Ok();
+	}
+	return Results.BadRequest();
+});
 
 app.UseRouting();
 app.UseSwagger();
