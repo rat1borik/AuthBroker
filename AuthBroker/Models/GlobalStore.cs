@@ -9,6 +9,7 @@ using System.Text;
 using System.Data;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Net;
 
 namespace AuthBroker.Models;
 
@@ -43,6 +44,7 @@ public class AccessToken {
 
 	[Column(TypeName = "jsonb")]
 	public Token RefreshToken { get; set; }
+	public IPAddress Ip { get; set; }
 
 	public AccessToken() {
 		Token = new Token { ExpiredAt = DateTime.Now + TimeSpan.FromHours(2), Key = RandomTokenGenerator.CreateKey() };

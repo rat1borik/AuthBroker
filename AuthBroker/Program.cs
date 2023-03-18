@@ -65,7 +65,7 @@ RSA signKey = RSA.Create();
 
 using (var scope = app.Services.CreateScope()) {
 	var dbCtx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-	//dbCtx.Database.EnsureDeleted();
+	dbCtx.Database.EnsureDeleted();
 	dbCtx.Database.EnsureCreated();
 
 	//var usr = new User() { Login = "228775", Password = "123456" };
@@ -105,7 +105,7 @@ app.MapPost(prefix + "/token", async (AuthTokenRequest tReq, [FromServices] Sess
 
 			if (sess != null && Convert.ToBase64String(sess.App.SecretKey) == tReq.Secret) {
 
-				var at = new AccessToken() {Session = sess};
+				var at = new AccessToken() {Session = sess, Ip = ctx.Connection.RemoteIpAddress};
 				await ats.AddAsync(at);
 
 				var jwt = new JwtSecurityToken(
