@@ -4,7 +4,7 @@ namespace AuthBroker.Models;
 public class AuthTokenRequest {
 	public string GrantType { get; set; }
 
-	public Guid Code { get; set; }
+	public string Code { get; set; }
 
 	public string Secret { get; set; }
 }

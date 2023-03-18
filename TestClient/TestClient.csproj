@@ -18,6 +18,7 @@
     <PackageReference Include="Blazor.Bootstrap" Version="1.4.5" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.3.0" />
     <PackageReference Include="BuildWebCompiler2022" Version="1.14.10" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.27.0" />
   </ItemGroup>
 
 </Project>

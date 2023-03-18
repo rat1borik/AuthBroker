@@ -7,6 +7,9 @@ using System.Data.Common;
 using System.Reflection.Metadata;
 using System.Text.Json.Nodes;
 using System.Linq;
+using System.Security.Cryptography;
+using Microsoft.EntityFrameworkCore.Update.Internal;
+using Microsoft.EntityFrameworkCore.Update;
 
 namespace AuthBroker.Models;
 
@@ -14,6 +17,8 @@ public class AppDbContext : DbContext {
 	public DbSet<User> Users { get; set; }
 
 	public DbSet<Session> Sessions { get; set; }
+
+	public DbSet<AccessToken> AccessTokens { get; set; }
 
 	public DbSet<AppClient> AppClients { get; set; }
 
@@ -74,6 +79,7 @@ public class UserAccStore : Store<User> {
         return await _cx.Users.Where(usr => usr.Login == login).FirstOrDefaultAsync();
     }
 }
+
 
 public class ScopeStore : Store<Scope> {
 
@@ -148,6 +154,16 @@ public class SessionStore : Store<Session> {
 
 	}
 
+	public async Task<Session?> GetSessionByCode(string code) {
+		//var q = from session in _store.Include(app => app.Scopes)
+		//        where session.User.Login == usr && session.App.Id == appId
+		//        select session;
+		//return await q.FirstAsync();
+
+		return await _store.Include(c => c.Scopes).Include(c => c.App).Include(c => c.User).Where(row => row.Code == code).FirstOrDefaultAsync();
+
+	}
+
 	public async Task<Session?> CreateSession(string usr, string appId, Guid[] scopes) {
         var _app = (from app in _cx.AppClients
                    where app.Id == appId
@@ -160,6 +176,7 @@ public class SessionStore : Store<Session> {
             var sess = new Session() {
                 App = _app,
                 User = _usr,
+                Code = RandomTokenGenerator.CreateKey(),
                 Scopes = (from scope in _cx.Scopes
                           where scopes.Contains(scope.Id)
                           select scope).ToList()
@@ -169,5 +186,39 @@ public class SessionStore : Store<Session> {
             return sess;
         }
         return null;
+	}
+
+    public async Task UpdateKey(Session sess) {
+        if (sess != null) {
+            sess.Code = RandomTokenGenerator.CreateKey();
+            await _cx.SaveChangesAsync();
+        }
+    }
+
+   
+}
+
+public class AccessTokenStore : Store<AccessToken> {
+
+	public AccessTokenStore(AppDbContext cx) : base(cx) {
+		_store = cx.AccessTokens;
+	}
+}
+
+public class RandomTokenGenerator {
+	public static string CreateKey() {
+		var key = new byte[32];
+		var rng = RandomNumberGenerator.Create();
+		rng.GetBytes(key);
+		return Convert.ToBase64String(key);
+	}
+}
+
+public static class Base64Ex {
+	public static string Base64UrlEncode(this string value) {
+		return value.Replace('+', '.').Replace('/', '_').Replace('=', '-');
+	}
+	public static string Base64UrlDecode(this string value) {
+		return value.Replace('.', '+').Replace('_', '/').Replace('-', '=');
 	}
 }

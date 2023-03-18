@@ -18,7 +18,6 @@ using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Authorization;
 using BlazorBootstrap;
-using AuthBroker.Models;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -46,6 +45,7 @@ builder.Services.AddTransient<ScopeStore>();
 builder.Services.AddTransient<UserAccStore>();
 builder.Services.AddTransient<AppClientStore>();
 builder.Services.AddTransient<SessionStore>();
+builder.Services.AddTransient<AccessTokenStore>();
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -97,22 +97,30 @@ app.MapGet(prefix+"/grants", ([FromServices] ScopeStore gs) =>
 
 
 
-app.MapPost(prefix + "/token", async (AuthTokenRequest tReq, [FromServices] SessionStore ss, [FromServices] AuthenticationStateProvider st, HttpContext ctx) => {
+app.MapPost(prefix + "/token", async (AuthTokenRequest tReq, [FromServices] SessionStore ss, [FromServices] AccessTokenStore ats, [FromServices] AuthenticationStateProvider st, HttpContext ctx) => {
 
 	switch (tReq.GrantType) {
 		case "authorization_code":
-			var sess = await ss.GetSession(tReq.Code);
+			var sess = await ss.GetSessionByCode(tReq.Code.Base64UrlDecode());
 
 			if (sess != null && Convert.ToBase64String(sess.App.SecretKey) == tReq.Secret) {
+
+				var at = new AccessToken() {Session = sess};
+				await ats.AddAsync(at);
+
 				var jwt = new JwtSecurityToken(
-				issuer: $"{ctx.Request.Scheme}://{ctx.Request.Host}{ctx.Request.PathBase}",
-				   audience: sess.App.Id.ToString(),
-				notBefore: DateTime.UtcNow,
-				claims: new List<Claim>() { new Claim(ClaimsIdentity.DefaultNameClaimType, sess.User.Login), new Claim(ClaimsIdentity.DefaultRoleClaimType, sess.User.IsAdmin?"Admin":"User") },
-				   expires: DateTime.UtcNow.Add(TimeSpan.FromHours(24)),
+					issuer: $"{ctx.Request.Scheme}://{ctx.Request.Host}{ctx.Request.PathBase}",
+					audience: sess.App.Id.ToString(),
+					notBefore: DateTime.Now,
+					claims: new List<Claim>() {   new Claim(ClaimsIdentity.DefaultNameClaimType, sess.User.Login)
+											, new Claim(ClaimsIdentity.DefaultRoleClaimType, sess.User.IsAdmin?"Admin":"User")
+											, new Claim("access_token", at.Token.Key)
+											, new Claim("refresh_token", at.RefreshToken.Key)},
+				   expires: at.Token.ExpiredAt,
 				   signingCredentials: new  SigningCredentials(new RsaSecurityKey(signKey), SecurityAlgorithms.RsaSha256));
 				var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
-				return Results.Ok(new AuthTokenResponse() { AccessToken = encodedJwt, ExpiresIn = TimeSpan.FromHours(24).Seconds, TokenType = "Bearer" });
+				await ss.UpdateKey(sess);
+				return Results.Ok(new AuthTokenResponse() { AccessToken = encodedJwt, ExpiresIn = (at.Token.ExpiredAt - DateTime.Now).Seconds, TokenType = "Bearer" });
 				
 			}
 			return Results.StatusCode(401);
@@ -123,7 +131,7 @@ app.MapPost(prefix + "/token", async (AuthTokenRequest tReq, [FromServices] Sess
 });
 
 app.MapGet(prefix + "/token/validate", () => {
-	return Results.Ok(new ValidationInfo() { PublicKey = signKey.ExportRSAPublicKeyPem(), Algorithm = signKey.SignatureAlgorithm });
+	return Results.Ok(new ValidationInfo() { PublicKey = Convert.ToBase64String(signKey.ExportRSAPublicKey()), Algorithm = signKey.SignatureAlgorithm });
 });
 
 

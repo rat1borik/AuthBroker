@@ -7,6 +7,8 @@ using System.Text.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Data;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AuthBroker.Models;
 
@@ -25,9 +27,32 @@ public class Session {
 
 	[Key]
 	public Guid Id { get; set; }
+	public string Code { get; set; }
 	public User User { get; set; }
 	public AppClient App { get; set; }
 	public ICollection<Scope>? Scopes { get; set; }
+}
+public class AccessToken {
+
+	[Key]
+	public Guid Id { get; set; }
+	public Session Session { get; set; }
+
+	[Column(TypeName = "jsonb")]
+	public Token Token { get; set; }
+
+	[Column(TypeName = "jsonb")]
+	public Token RefreshToken { get; set; }
+
+	public AccessToken() {
+		Token = new Token { ExpiredAt = DateTime.Now + TimeSpan.FromHours(2), Key = RandomTokenGenerator.CreateKey() };
+		RefreshToken = new Token { ExpiredAt = DateTime.Now + TimeSpan.FromHours(24), Key = RandomTokenGenerator.CreateKey() };
+	}
+}
+
+public class Token {
+	public string Key { get; set; }
+	public DateTime ExpiredAt { get; set; }
 }
 
 public class Scope {

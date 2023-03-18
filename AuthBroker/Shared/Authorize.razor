@@ -68,7 +68,7 @@
 		var state = await asp.GetAuthenticationStateAsync();
 		var sess = await ss.CreateSession(state.User.Identity.Name, AppId, _requestedScopes);
 		if (sess != null) {
-			Redirect(sess.Id.ToString());
+			Redirect(sess.Code);
 		}
 	}
 
@@ -81,7 +81,7 @@
 			}
 			UriBuilder ub = new UriBuilder(redir);
 			var query = HttpUtility.ParseQueryString(ub.Query);
-			query["auth_code"] = authCode;
+			query["auth_code"] = authCode.Base64UrlEncode();
 			ub.Query = query.ToString();
 			navManager.NavigateTo(ub.ToString(), true);
 
@@ -101,7 +101,7 @@
 		AuthApp = await acs.GetAppClientAsync(AppId);
 		AuthScopes = _requestedScopes.ToList().ConvertAll<Scope?>(el => scs.GetScopeAsync(el).Result).ToArray();
 		if (CurrentSession != null)
-			Redirect(CurrentSession.Id.ToString());
+			Redirect(CurrentSession.Code);
 
 		
 	}
