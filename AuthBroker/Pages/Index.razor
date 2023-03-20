@@ -2,6 +2,7 @@
 
 @using AuthBroker.Models
 @inject SessionStore sstore
+@inject AccessTokenStore ats
 @inject AuthenticationStateProvider asp
 
 <PageTitle>@Loc["Index"]</PageTitle>
@@ -11,7 +12,7 @@
 @if (sessions == null) {
             <p><em>@Loc["Loading..."]</em></p>
 } else {
-    <Modal @ref="modal" />
+    <Modal @ref="modal"/>
 
 
                 <table class="table table-hover">
@@ -64,15 +65,19 @@
     }
 
     private async Task Logout(Session ss) {
-        await sstore.RemoveAsync(ss);
+        if (ss != null) {
+            await sstore.RemoveAsync(ss);
+        }
         await Refresh();
     } 
 
     private async Task ShowDetails(Session ss) {
         var parameters = new Dictionary<string, object>();
         parameters.Add("Session", ss);
+        parameters.Add("AccTokens", await ats.GetBySession(ss));
         await modal.ShowAsync<ModalDetails>(title: Loc["Details"], parameters: parameters);
 
     }
+
 }
 

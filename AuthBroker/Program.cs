@@ -134,14 +134,28 @@ app.MapGet(prefix + "/token/validate", () => {
 	return Results.Ok(new ValidationInfo() { PublicKey = Convert.ToBase64String(signKey.ExportRSAPublicKey()), Algorithm = signKey.SignatureAlgorithm });
 });
 
-app.MapPost(prefix + "/token/invalidate", async (AuthTokenAction tReq, [FromServices] AccessTokenStore ats, [FromServices] SessionStore ss) => {
+app.MapPost(prefix + "/token/invalidate", async (AuthTokenAction tReq, [FromServices] AccessTokenStore ats) => {
 	var token = await ats.GetByAccessToken(tReq.Token);
 
-	if (Convert.ToBase64String(token.Session.App.SecretKey) == tReq.Secret) {
+	if (token != null && Convert.ToBase64String(token.Session.App.SecretKey) == tReq.Secret) {
 		await ats.RemoveAsync(token);
 		return Results.Ok();
 	}
 	return Results.BadRequest();
+});
+
+app.MapPost(prefix + "/token/validate", async (AuthTokenAction tReq, [FromServices] AccessTokenStore ats) => {
+	var token = await ats.GetByAccessToken(tReq.Token);
+
+	if (token != null) {
+		if (Convert.ToBase64String(token.Session.App.SecretKey) != tReq.Secret) {
+			return Results.BadRequest();
+		}
+		if (token.Token.ExpiredAt > DateTime.Now) {
+			return Results.Ok();
+		}
+	}
+	return Results.Unauthorized();
 });
 
 app.UseRouting();

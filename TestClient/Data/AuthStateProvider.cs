@@ -13,12 +13,18 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider {
 
 	private readonly ILocalStorageService _localStorage;
 	private JwtSecurityTokenHandler JwtHandler;
-	TokenValidator _tokenValidator { get; set; }
+	TokenValidator _tokenValidator;
+	IHttpClientFactory _httpClientFactory;
+	IConfiguration _cfg;
 
-	public CustomAuthenticationStateProvider(ILocalStorageService localStorage, TokenValidator tokenValidator) {
+
+
+	public CustomAuthenticationStateProvider(ILocalStorageService localStorage, TokenValidator tokenValidator, IHttpClientFactory httpClientFactory, IConfiguration cfg) {
         _localStorage = localStorage;
 		 JwtHandler = new JwtSecurityTokenHandler();
 		_tokenValidator	= tokenValidator;
+		_httpClientFactory = httpClientFactory;
+		_cfg = cfg;
 	}
 
 	public override async Task<AuthenticationState> GetAuthenticationStateAsync() {
@@ -28,14 +34,23 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider {
 			if (userSessionStorageResult != null) {
 				SecurityToken securityToken;
 				var claims = JwtHandler.ValidateToken(userSessionStorageResult, await _tokenValidator.GetValidationParameters(), out securityToken);
-				if (securityToken != null && claims != null)
-					return await Task.FromResult(new AuthenticationState(claims));
-			}
-		} catch {
+				if (securityToken != null && claims != null) {
+					var request = new HttpRequestMessage(HttpMethod.Post,
+							"https://localhost:7276/api/v1/token/validate");
+					request.Headers.Add("Accept", "application/json");
+					request.Headers.Add("User-Agent", "TestApp");
+					request.Content = JsonContent.Create(new AuthTokenAction { Token = claims.Claims.Where(cl=>cl.Type=="access_token").FirstOrDefault().Value, Secret = _cfg.GetSection("SSO")["ClientSecret"] });
 
-			NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(Claims.Anonymous)));
-			return await Task.FromResult(new AuthenticationState(Claims.Anonymous));
-		}
+					var client = _httpClientFactory.CreateClient();
+
+					var response = await client.SendAsync(request);
+
+					if (response.IsSuccessStatusCode) {
+						return await Task.FromResult(new AuthenticationState(claims));
+					}
+				}
+			}
+		} catch { }
 
 		NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(Claims.Anonymous)));
 		return await Task.FromResult(new AuthenticationState(Claims.Anonymous));
@@ -110,6 +125,20 @@ public class AuthTokenAction {
 
 	public string Token { get; set; }
 
+}
+
+public class AuthTokenRequest {
+    public string GrantType { get; set; }
+
+    public string Code { get; set; }
+
+    public string Secret { get; set; }
+}
+
+public class AuthTokenResponse {
+    public string AccessToken { get; set; }
+    public int ExpiresIn { get; set; }
+    public string TokenType { get; set; }
 }
 
 public static class Claims {

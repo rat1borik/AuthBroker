@@ -9,6 +9,7 @@
 	[Inject] protected ToastService ToastService { get; set; }
 
 	private async Task OnlyAuthButton() {
+		if (!(await asp.GetAuthenticationStateAsync()).User.Identity.IsAuthenticated) return;
 		ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Some error occured"]));
 	}
 }

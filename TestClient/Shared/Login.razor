@@ -5,6 +5,7 @@
 @using Microsoft.IdentityModel;
 @using System.Security.Cryptography;
 @using TestClient.Authentication;
+@using TestClient.Data;
 
 @inject IHttpClientFactory ClientFactory
 @inject IJSRuntime js;
@@ -34,19 +35,6 @@
 </section>
 
 @code {
-	public class AuthTokenRequest {
-		public string GrantType { get; set; }
-
-		public string Code { get; set; }
-
-		public string Secret { get; set; }
-	}
-
-	public class AuthTokenResponse {
-		public string AccessToken { get; set; }
-		public int ExpiresIn { get; set; }
-		public string TokenType { get; set; }
-	}
 
 	[Inject] protected ToastService ToastService { get; set; }
 
