@@ -46,6 +46,7 @@ builder.Services.AddTransient<UserAccStore>();
 builder.Services.AddTransient<AppClientStore>();
 builder.Services.AddTransient<SessionStore>();
 builder.Services.AddTransient<AccessTokenStore>();
+builder.Services.AddSingleton<CryptoProvider>();
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen(c =>
 {

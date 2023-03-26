@@ -114,6 +114,7 @@
 		[Required(ErrorMessage = "No Email")]
 		[EmailAddress(ErrorMessage = "It's not email address")]
 		public string Email { get; set; }
+		[MinLength(8, ErrorMessage = "Password is too short.")]
 		[Required(ErrorMessage = "No Password")]
 		public string Password { get; set; }
 		[Required(ErrorMessage = "No Validation password")]
@@ -141,15 +142,15 @@
 	private async Task Authenticate() {
 		SHA256 sha = SHA256.Create();
 		var userAccount = await us.GetByLogin(model.UserName);
-		if (userAccount == null || userAccount.Password != sha.ComputeHash(Encoding.UTF8.GetBytes(model.Password))) {
-			await js.InvokeVoidAsync("alert", Loc["Invalid User Name or Password"].ToString());
+		if (userAccount == null || !userAccount.VerifyPassword(Encoding.UTF8.GetBytes(model.Password))) {
+			ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Incorrect login or password!"]));
 			return;
 		}
 
 		var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
 		await customAuthStateProvider.UpdateAuthenticationState(new UserSession {
-					UserName = userAccount.Login,
-					Role = "Admin"
+				UserName = model.UserName,
+				Password = model.Password
 				});
 		navManager.NavigateTo("/", true);
 	}
@@ -161,12 +162,18 @@
 			modelR.UserName = "";
 			return;
 		}
-		SHA256 sha = SHA256.Create();
 		User user = new User {
 			Login = modelR.UserName,
-			Password = sha.ComputeHash(Encoding.UTF8.GetBytes(modelR.Password)),
+			Password = Encoding.UTF8.GetBytes(modelR.Password),
 			Credentials = new Credentials{Email = modelR.Email}
 		};
 		await us.AddAsync(user);
+
+		var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
+		await customAuthStateProvider.UpdateAuthenticationState(new UserSession {
+				UserName = modelR.UserName,
+				Password = modelR.Password
+			});
+		navManager.NavigateTo("/", true);
 	}
 }

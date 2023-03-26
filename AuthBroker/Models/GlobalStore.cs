@@ -10,19 +10,38 @@ using System.Data;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Net;
+using BlazorBootstrap.Extensions;
+using System.Collections;
 
 namespace AuthBroker.Models;
-
+static class StructuralExtensions {
+	public static bool SEquals<T>(this T a, T b)
+		where T : IStructuralEquatable {
+		return a.Equals(b, StructuralComparisons.StructuralEqualityComparer);
+	}
+}
 public class User {
 
 	[Key]
 	public Guid Id { get; set; }
 	public string Login { get; set; }
-	public byte[] Password { get; set; }
+
+	private byte[] password;
+	public byte[] Password {
+		get { 
+			return password;
+		} set {
+			this.password = SHA256.Create().ComputeHash(value);
+		} }
 
 	public bool IsAdmin { get; set; }
 	[Column(TypeName = "jsonb")]
 	public Credentials? Credentials { get; set; }
+
+	public bool VerifyPassword(byte[] password) {
+		var s = SHA256.Create().ComputeHash(password);
+		return s.SEquals(Password);
+	}
 }
 public class Credentials {
 	public string Email { get; set; }

@@ -78,6 +78,7 @@ public class UserAccStore : Store<User> {
     public async Task<User?> GetByLogin(string login) {
         return await _cx.Users.Where(usr => usr.Login == login).FirstOrDefaultAsync();
     }
+
 }
 
 
