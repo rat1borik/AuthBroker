@@ -1,5 +1,9 @@
 ﻿@using AuthBroker.Authentication
 @using AuthBroker.Models;
+@using System.Security.Cryptography;
+@using System.Text;
+@using System.Text.Json;
+@using System.ComponentModel.DataAnnotations;
 @inject UserAccStore us;
 @inject IJSRuntime js;
 @inject AuthenticationStateProvider authStateProvider;
@@ -9,73 +13,81 @@
 		<div class="row g-0 d-flex justify-content-center align-items-center h-100">
 	  <div class="col-12 col-md-8 col-lg-6 col-xl-5"style=" max-width: 450px">
 		<div class="card bg-dark text-white login-box " style="border-radius: 1rem;">
-			<ul class="nav nav-pills nav-justified my-2 mx-2" id="myTab" role="tablist">
-  <li class="nav-item" role="presentation" >
-	<button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">@Loc["Signing in"]</button>
-  </li>
-  <li class="nav-item" role="presentation">
-	<button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">@Loc["Signing up"]</button>
-  </li>
+				<Tabs EnableFadeEffect="true" NavStyle="NavStyle.Pills" Class="nav-justified my-2 mx-2">
+					<Tab Title="@Loc["Signing in"]" IsActive="true">
+					<Content>
+						<EditForm Model="@model" OnValidSubmit="@Authenticate">
+								
+						  <div class="card-body p-5 text-center">
 
-</ul>
-<div class="tab-content" id="myTabContent">
-  <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
-		  <div class="card-body p-5 text-center">
+							<div class="mb-md-3 mt-md-4 pb-5">
 
-			<div class="mb-md-3 mt-md-4 pb-5">
+							  <span class="oi oi-key mb-5 fs-1 text-white-50"></span>
 
-			  <span class="oi oi-key mb-5 fs-1 text-white-50"></span>
+							  <div class="form-outline form-white mb-3">
+								<InputText @bind-Value="model.UserName" type="text" id="loginUserName" placeholder="@Loc["Login"]" class="form-control" />
+							  </div>
 
-			  <div class="form-outline form-white mb-3">
-				<input @bind="model.UserName" type="text" id="typeEmailX" placeholder="@Loc["Login"]" class="form-control" />
-			  </div>
-
-			  <div class="form-outline form-white mb-3">
-				<input @bind="model.Password"  type="password" id="typePasswordX" placeholder="@Loc["Password"]" class="form-control" />
-			  </div>
+							  <div class="form-outline form-white mb-3">
+								<InputText @bind-Value="model.Password" type="password" id="loginPassword" placeholder="@Loc["Password"]" class="form-control" />
+							  </div>
 
 								@*<p class="small mb-5 pb-lg-2"><a class="text-white-50" href="#!">Forgot password?</a></p>*@
+								<div class="px-5">
+										<DataAnnotationsValidator/>
+										<ValidationSummary />
+								</div>
+							  <Button Class="btn btn-outline-primary btn-lg px-5 mt-5"  Type="ButtonType.Submit">@Loc["Sign in"]</Button>
 
-			  <button class="btn btn-outline-primary btn-lg px-5 mt-5" type="submit"  @onclick="@Authenticate">@Loc["Sign in"]</button>
+							</div>
 
-			</div>
+						  </div>
+					  </EditForm>
+					</Content>
+			</Tab>
+					<Tab Title="@Loc["Signing up"]">
+				<Content>
+					<EditForm EditContext="@editContextReg" OnValidSubmit="@SignUp">
+					<DataAnnotationsValidator />
+					<div class="card-body p-5 text-center">
 
-		  </div>
-		</div>
-		<div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-			<form>
-			<div class="card-body p-5 text-center">
+					<div class="mb-md-3 mt-md-4 pb-5">
 
-			<div class="mb-md-3 mt-md-4 pb-5">
+					  <span class="oi oi-account-login mb-5 fs-1 text-white-50"></span>
 
-			  <span class="oi oi-account-login mb-5 fs-1 text-white-50"></span>
+					  <div class="form-outline form-white mb-3">
+											<InputText @bind-Value="modelR.UserName" type="text" id="regUserName" placeholder="@Loc["Login"]" class="form-control" />
+											<ValidationMessage For="@(() => modelR.UserName)" />
 
-			  <div class="form-outline form-white mb-3">
-				<input type="text" id="typeEmailX" placeholder="@Loc["Login"]" class="form-control"/>
-			  </div>
+					  </div>
 
-			  <div class="form-outline form-white mb-3">
-				<input type="email" id="typeEmailX" placeholder="@Loc["E-mail"]" class="form-control" />
-			  </div>
+					  <div class="form-outline form-white mb-3">
+											<InputText @bind-Value="modelR.Email" type="email" id="regEmail" placeholder="@Loc["E-mail"]" class="form-control" />
+											<ValidationMessage For="@(() => modelR.Email)" />
+					  </div>
 
-			  <div class="form-outline form-white mb-3">
-				<input type="password" id="typePasswordX" @onpaste:preventDefault="true" placeholder="@Loc["Create password"]" class="form-control" />
-			  </div>
+					  <div class="form-outline form-white mb-3">
+											<InputText @bind-Value="modelR.Password" type="password" id="regPassword" @onpaste:preventDefault="true" placeholder="@Loc["Create password"]" class="form-control" />
+											<ValidationMessage For="@(() => modelR.Password)" />
+					  </div>
 
-			  <div class="form-outline form-white mb-3">
-				<input type="password" id="typePasswordX" @onpaste:preventDefault="true" placeholder="@Loc["Repeat password"]" class="form-control" />
-			  </div>
+					  <div class="form-outline form-white mb-3">
+											<InputText @bind-Value="modelR.ValidationPassword" type="password" id="regValidPassword" @onpaste:preventDefault="true" placeholder="@Loc["Repeat password"]" class="form-control" />
+											<ValidationMessage For="@(() => modelR.ValidationPassword)" />
+					  </div>
 
-									@*<p class="small mb-5 pb-lg-2"><a class="text-white-50" href="#!">Forgot password?</a></p>*@
+											@*<p class="small mb-5 pb-lg-2"><a class="text-white-50" href="#!">Forgot password?</a></p>*@
 
-			  <button class="btn btn-outline-primary btn-lg px-5 mt-5" type="button" @onclick:preventDefault>@Loc["Sign up"]</button>
 
-			</div>
+								<Button Class="btn btn-outline-primary btn-lg px-5 mt-5" Type="ButtonType.Submit">@Loc["Sign up"]</Button>
 
-		  </div>
-		  </form>
-		</div>
-		</div>
+							</div>
+
+						</div>
+					</EditForm>
+				</Content>
+			</Tab>
+		</Tabs>
 		 </div>
 	  </div>
 	</div>
@@ -83,25 +95,78 @@
 </section>
 
 @code {
-		private class Model {
-			public string UserName { get; set; }
-			public string Password { get; set; }
+	[Inject] protected ToastService ToastService { get; set; }
+
+	private EditContext? editContextReg;
+	private ValidationMessageStore? messageStoreReg;
+
+
+	private class SigninModel {
+		[Required(ErrorMessage="No Username")]
+		public string UserName { get; set; }
+		[Required(ErrorMessage = "No Password")]
+		public string Password { get; set; }
+	}
+	private class SignupModel {
+		[MinLength(10, ErrorMessage = "UserName is too short.")]
+		[Required(ErrorMessage = "No Username")]
+		public string UserName { get; set; }
+		[Required(ErrorMessage = "No Email")]
+		[EmailAddress(ErrorMessage = "It's not email address")]
+		public string Email { get; set; }
+		[Required(ErrorMessage = "No Password")]
+		public string Password { get; set; }
+		[Required(ErrorMessage = "No Validation password")]
+		public string ValidationPassword { get; set; }
+	}
+
+	private SigninModel model = new SigninModel();
+	private SignupModel modelR = new SignupModel();
+
+	protected override void OnInitialized() {
+		editContextReg = new(modelR);
+		editContextReg.OnValidationRequested += async (s, e) => await HandleValidation();
+		editContextReg.OnFieldChanged += async (s, e) => await HandleValidation();
+		messageStoreReg = new(editContextReg);
+	}
+
+	private async Task HandleValidation() {
+		messageStoreReg?.Clear();
+		// Custom validation logic
+		if (modelR.Password != modelR.ValidationPassword) {
+			messageStoreReg?.Add(()=>modelR.ValidationPassword,Loc["Passwords doesn't match"]);
+		}
+	}
+
+	private async Task Authenticate() {
+		SHA256 sha = SHA256.Create();
+		var userAccount = await us.GetByLogin(model.UserName);
+		if (userAccount == null || userAccount.Password != sha.ComputeHash(Encoding.UTF8.GetBytes(model.Password))) {
+			await js.InvokeVoidAsync("alert", Loc["Invalid User Name or Password"].ToString());
+			return;
 		}
 
-		private Model model = new Model();
-	
-		private async Task Authenticate() {
-			var userAccount = await us.GetByLogin(model.UserName);
-			if (userAccount == null || userAccount.Password != model.Password) {
-				await js.InvokeVoidAsync("alert", "Invalid User Name or Password");
-				return;
-			}
-
-			var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
-			await customAuthStateProvider.UpdateAuthenticationState(new UserSession {
+		var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
+		await customAuthStateProvider.UpdateAuthenticationState(new UserSession {
 					UserName = userAccount.Login,
 					Role = "Admin"
 				});
-			navManager.NavigateTo("/", true);
+		navManager.NavigateTo("/", true);
+	}
+
+	private async Task SignUp() {
+		var userAccount = await us.GetByLogin(modelR.UserName);
+		if (userAccount != null) {
+			messageStoreReg?.Add(() => modelR.UserName, Loc["This username is taken"]);
+			modelR.UserName = "";
+			return;
+		}
+		SHA256 sha = SHA256.Create();
+		User user = new User {
+			Login = modelR.UserName,
+			Password = sha.ComputeHash(Encoding.UTF8.GetBytes(modelR.Password)),
+			Credentials = new Credentials{Email = modelR.Email}
+		};
+		await us.AddAsync(user);
 	}
 }

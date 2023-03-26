@@ -18,12 +18,15 @@ public class User {
 	[Key]
 	public Guid Id { get; set; }
 	public string Login { get; set; }
-	public string Password { get; set; }
+	public byte[] Password { get; set; }
 
 	public bool IsAdmin { get; set; }
-	public JsonDocument? Credentials { get; set; }
+	[Column(TypeName = "jsonb")]
+	public Credentials? Credentials { get; set; }
 }
-
+public class Credentials {
+	public string Email { get; set; }
+}
 public class Session {
 
 	[Key]

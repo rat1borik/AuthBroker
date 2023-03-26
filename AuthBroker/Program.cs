@@ -65,7 +65,7 @@ RSA signKey = RSA.Create();
 
 using (var scope = app.Services.CreateScope()) {
 	var dbCtx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-	//dbCtx.Database.EnsureDeleted();
+	dbCtx.Database.EnsureDeleted();
 	dbCtx.Database.EnsureCreated();
 
 	//var usr = new User() { Login = "228775", Password = "123456" };
