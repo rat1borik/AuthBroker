@@ -5,7 +5,7 @@
 @inject NavigationManager navManager
 @inject SessionStore ss
 @inject AppClientStore acs
-@inject ScopeStore scs
+@inject GrantStore scs
 @inject AuthenticationStateProvider asp
 
 <h3>@Loc["Authorize"]</h3>
@@ -16,20 +16,20 @@
 	{
 		<h4>@Loc["Current session:"]</h4>
 		<p>@Loc["Scopes:"]</p>
-		@if (CurrentSession.Scopes != null)
+		@if (CurrentSession.Grants != null)
 		{
-			@foreach (var scope in CurrentSession.Scopes)
+			@foreach (var scope in CurrentSession.Grants)
 			{
-				<p>@scope.Name</p>
+				<p>@string.Format("{0} ({1})", scope.Name , scope.Action)</p>
 			}
 		}
 	}
 	else
 	{
 		@if (AuthScopes != null) {
-			<p>@Loc["Requested scopes"]</p>
+			<p>@Loc["Requested grants:"]</p>
 			@foreach (var scope in AuthScopes) {
-				<p>@scope.Name</p>
+				<p>@string.Format("{0} ({1})", scope.Name , scope.Action)</p>
 			}
 		}
 		<Button Color="ButtonColor.Primary" @onclick="@Auth">Accept</Button>
@@ -51,7 +51,6 @@
 	[SupplyParameterFromQuery(Name = "scopes")]
 	public string[] RequestedScopes { get; set; }
 
-	Guid[] _requestedScopes;
 
 	[Inject] protected ToastService ToastService { get; set; }
 
@@ -62,11 +61,11 @@
 	[CascadingParameter]
 	private Session? CurrentSession { get; set; }
 	private AppClient? AuthApp { get; set; }
-	private Scope?[]? AuthScopes { get; set; }
+	private Grant[]? AuthScopes { get; set; }
 
 	private async Task Auth() {
 		var state = await asp.GetAuthenticationStateAsync();
-		var sess = await ss.CreateSession(state.User.Identity.Name, AppId, _requestedScopes);
+		var sess = await ss.CreateSession(state.User.Identity.Name, AppId, AuthScopes);
 		if (sess != null) {
 			Redirect(sess.Code);
 		}
@@ -89,20 +88,17 @@
 	}
 
 	protected override async Task OnInitializedAsync() {
-		_requestedScopes = RequestedScopes.ToList().ConvertAll<Guid?>(el =>
+		try
 		{
-			Guid code;
-			if (Guid.TryParse(el, out code)) return code;
-			return null;
-		}).Where(el => el != null).ToList().ConvertAll<Guid>(el => (Guid)el).ToArray();
+			var state = await asp.GetAuthenticationStateAsync();
+			CurrentSession = await ss.GetSessionAsync(AppId, state.User.Identity.Name);
+			AuthApp = await acs.GetAppClientAsync(AppId);
+			AuthScopes = RequestedScopes.ToList().ConvertAll<Grant?>(el => scs.GetGrant(el)).Where(el => el != null).ToArray();
+			if (CurrentSession != null)
+				Redirect(CurrentSession.Code);
 
-		var state = await asp.GetAuthenticationStateAsync();
-		CurrentSession = await ss.GetSessionAsync(AppId, state.User.Identity.Name);
-		AuthApp = await acs.GetAppClientAsync(AppId);
-		AuthScopes = _requestedScopes.ToList().ConvertAll<Scope?>(el => scs.GetScopeAsync(el).Result).ToArray();
-		if (CurrentSession != null)
-			Redirect(CurrentSession.Code);
-
-		
+		}catch(Exception ex) {
+			
+		}
 	}
 }

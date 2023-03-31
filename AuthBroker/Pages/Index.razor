@@ -22,7 +22,7 @@
                         <th>@Loc["User"]</th>
                     </AuthorizeView>
                     <th>@Loc["App name"]</th>
-                    <th>@Loc["Scopes"]</th>
+                    <th>@Loc["Grants"]</th>
                     <th>@Loc["Details"]</th>
                     <th></th>
                 </tr>
@@ -34,8 +34,8 @@
                                        <td class="align-middle">@ss.User.Login</td>
                             </AuthorizeView>
                             <td class="align-middle">@ss.App.Name</td>
-                            <td class="align-middle">@if (ss.Scopes != null) {
-                                @foreach (var scp in ss.Scopes) {
+                            <td class="align-middle">@if (ss.Grants != null) {
+                                @foreach (var scp in ss.Grants) {
                                         @scp.Name<br/>
                                 }                         
                             }

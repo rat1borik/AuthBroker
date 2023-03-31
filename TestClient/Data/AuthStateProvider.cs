@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using BlazorBootstrap;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 
 namespace TestClient.Authentication;
 
@@ -133,6 +134,9 @@ public class AuthTokenRequest {
     public string Code { get; set; }
 
     public string Secret { get; set; }
+
+	public string RemoteIp { get; set; }
+	public string UserAgent { get; set; }
 }
 
 public class AuthTokenResponse {

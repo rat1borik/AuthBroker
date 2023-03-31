@@ -5,11 +5,20 @@
 
 <Button Color="ButtonColor.Primary" @onclick="OnlyAuthButton">OnlyAuth</Button>
 
-@code{
+<Button Color="ButtonColor.Secondary" @onclick="ShowEmail">Show My Email</Button>
+
+@code {
 	[Inject] protected ToastService ToastService { get; set; }
 
 	private async Task OnlyAuthButton() {
-		if (!(await asp.GetAuthenticationStateAsync()).User.Identity.IsAuthenticated) return;
+		var authData = await asp.GetAuthenticationStateAsync();
+		if (!authData.User.Identity.IsAuthenticated) return;
 		ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Some error occured"]));
+	}
+	private async Task ShowEmail() {
+		var authData = await asp.GetAuthenticationStateAsync();
+		if (!authData.User.Identity.IsAuthenticated) return;
+		var msg = string.Format("Your e-mail address is {0}", authData.User.Claims.Where(cl => cl.Type == "e-mail").FirstOrDefault().Value.ToString());
+		ToastService.Notify(new ToastMessage(ToastType.Info, msg));
 	}
 }

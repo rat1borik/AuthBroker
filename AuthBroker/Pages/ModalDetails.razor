@@ -10,6 +10,7 @@
             <thead>
                 <tr>
                     <th>@Loc["Ip"]</th>
+                    <th>@Loc["User-Agent"]</th>
                     <th>@Loc["ExpiredAt"]</th>
                     <th></th>
                 </tr>
@@ -19,6 +20,7 @@
                     @foreach (var at in AccTokens) {
                         <tr>
                             <td class="align-middle">@at.Ip.ToString()</td>
+                            <td>@at.UserAgent</td>
                             <td class="align-middle">@at.Token.ExpiredAt.ToString()</td>
                             <td class="d-flex justify-content-end"><Button Color="ButtonColor.Dark" @onclick="()=>Logout(at)"><span class="oi oi-account-logout"></span></Button></td>
                         </tr>

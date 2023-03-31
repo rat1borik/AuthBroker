@@ -36,16 +36,14 @@ public class User {
 
 	public bool IsAdmin { get; set; }
 	[Column(TypeName = "jsonb")]
-	public Credentials? Credentials { get; set; }
+	public Dictionary<string, string>? Credentials { get; set; }
 
 	public bool VerifyPassword(byte[] password) {
 		var s = SHA256.Create().ComputeHash(password);
 		return s.SEquals(Password);
 	}
 }
-public class Credentials {
-	public string Email { get; set; }
-}
+
 public class Session {
 
 	[Key]
@@ -53,7 +51,7 @@ public class Session {
 	public string Code { get; set; }
 	public User User { get; set; }
 	public AppClient App { get; set; }
-	public ICollection<Scope>? Scopes { get; set; }
+	public ICollection<Grant>? Grants { get; set; }
 }
 public class AccessToken {
 
@@ -66,7 +64,9 @@ public class AccessToken {
 
 	[Column(TypeName = "jsonb")]
 	public Token RefreshToken { get; set; }
-	public IPAddress Ip { get; set; }
+	public string Ip { get; set; }
+
+	public string UserAgent {get; set; }
 
 	public AccessToken() {
 		Token = new Token { ExpiredAt = DateTime.Now + TimeSpan.FromHours(2), Key = RandomTokenGenerator.CreateKey() };
@@ -79,11 +79,21 @@ public class Token {
 	public DateTime ExpiredAt { get; set; }
 }
 
-public class Scope {
+public class Grant {
 	[Key]
-	public Guid Id { get; set; }
+	public string Id { get; set; }
 	public string Name { get; set; }
+	public string? Action { get; set; }
+
+	public string? ValueType { get; set; }
 	public ICollection<Session>? Sessions { get; set; }
+}
+
+public class GrantView {
+	public string Id { get; set; }
+	public string Name { get; set; }
+	public string? Action { get; set; }
+	public string? ValueType { get; set; }
 }
 
 public class AppClient {

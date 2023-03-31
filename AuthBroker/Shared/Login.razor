@@ -163,10 +163,12 @@
 			return;
 		}
 		User user = new User {
-			Login = modelR.UserName,
-			Password = Encoding.UTF8.GetBytes(modelR.Password),
-			Credentials = new Credentials{Email = modelR.Email}
+				Login = modelR.UserName,
+				Password = Encoding.UTF8.GetBytes(modelR.Password),
+				Credentials = new Dictionary<string, string>()
 		};
+		user.Credentials.Add("e-mail", modelR.Email);
+
 		await us.AddAsync(user);
 
 		var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;

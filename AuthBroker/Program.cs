@@ -24,6 +24,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Principal;
 using System.Security.Cryptography;
 using Bogus.DataSets;
+using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,12 +37,16 @@ builder.Services.AddLocalization();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddOptions();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddServerSideBlazor();
+builder.Services.AddServerSideBlazor().AddHubOptions(options =>
+{
+	options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+	options.HandshakeTimeout = TimeSpan.FromSeconds(30);
+});
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 builder.Services.AddScoped<ProtectedSessionStorage>();
 builder.Services.AddScoped<AuthenticationStateProvider,CustomAuthenticationStateProvider > ();
 builder.Services.AddAntiforgery();
-builder.Services.AddTransient<ScopeStore>();
+builder.Services.AddTransient<GrantStore>();
 builder.Services.AddTransient<UserAccStore>();
 builder.Services.AddTransient<AppClientStore>();
 builder.Services.AddTransient<SessionStore>();
@@ -67,7 +72,11 @@ RSA signKey = RSA.Create();
 using (var scope = app.Services.CreateScope()) {
 	var dbCtx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 	dbCtx.Database.EnsureDeleted();
+	var scp = new Grant() { Id = "e-mail", Name = "E-mail", Action = "read", ValueType = "string" };
+
 	dbCtx.Database.EnsureCreated();
+	dbCtx.Grants.Add(scp);
+	dbCtx.SaveChanges();
 
 	//var usr = new User() { Login = "228775", Password = "123456" };
 	//dbCtx.Users.Add(usr);
@@ -93,8 +102,8 @@ app.UseStaticFiles();
 
 
 var prefix = "/api/v1";
-app.MapGet(prefix+"/grants", ([FromServices] ScopeStore gs) =>
-		gs.GetListAsync());
+app.MapGet(prefix+"/grants", async ([FromServices] GrantStore gs) =>
+		(await gs.GetListAsync()).Select(gr=>new GrantView() { Id = gr.Id, Name = gr.Name, Action = gr.Action, ValueType = gr.ValueType}));
 
 
 
@@ -106,14 +115,22 @@ app.MapPost(prefix + "/token", async (AuthTokenRequest tReq, [FromServices] Sess
 
 			if (sess != null && Convert.ToBase64String(sess.App.SecretKey) == tReq.Secret) {
 
-				var at = new AccessToken() {Session = sess, Ip = ctx.Connection.RemoteIpAddress};
+				var at = new AccessToken() {Session = sess, Ip = tReq.RemoteIp, UserAgent = tReq.UserAgent };
 				await ats.AddAsync(at);
+
+				var grants  =  sess.Grants.ToList().ConvertAll<Claim>(gr => {
+					var cred = sess.User.Credentials[gr.Id];
+					if (cred != null) {
+						return new Claim(gr.Id, cred, gr.ValueType);
+					}
+					return null;
+				}).Where(cl=>cl!=null);
 
 				var jwt = new JwtSecurityToken(
 					issuer: $"{ctx.Request.Scheme}://{ctx.Request.Host}{ctx.Request.PathBase}",
 					audience: sess.App.Id.ToString(),
 					notBefore: DateTime.Now,
-					claims: new List<Claim>() {   new Claim(ClaimsIdentity.DefaultNameClaimType, sess.User.Login)
+					claims: new List<Claim>(grants) {   new Claim(ClaimsIdentity.DefaultNameClaimType, sess.User.Login)
 											, new Claim(ClaimsIdentity.DefaultRoleClaimType, sess.User.IsAdmin?"Admin":"User")
 											, new Claim("access_token", at.Token.Key)
 											, new Claim("refresh_token", at.RefreshToken.Key)},

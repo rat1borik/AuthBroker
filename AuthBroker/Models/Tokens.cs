@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Net;
+using System.Text.Json;
 
 namespace AuthBroker.Models;
 public class AuthTokenRequest {
@@ -7,6 +8,9 @@ public class AuthTokenRequest {
 	public string Code { get; set; }
 
 	public string Secret { get; set; }
+
+	public string RemoteIp { get; set; }
+	public string UserAgent { get; set; }
 }
 
 public class AuthTokenAction {

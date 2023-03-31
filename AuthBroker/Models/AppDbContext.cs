@@ -22,7 +22,7 @@ public class AppDbContext : DbContext {
 
 	public DbSet<AppClient> AppClients { get; set; }
 
-	public DbSet<Scope> Scopes { get; set; }
+	public DbSet<Grant> Grants { get; set; }
 
 	public AppDbContext(DbContextOptions<AppDbContext> options)
 		: base(options) {
@@ -38,8 +38,8 @@ public class AppDbContext : DbContext {
         modelBuilder.Entity<User>().HasIndex(i => i.Login).IsUnique();
         modelBuilder.Entity<User>().HasCheckConstraint("name_cntsr", "length(login) > 5");
 
-		modelBuilder.Entity<Scope>().HasIndex(i => i.Name).IsUnique();
-        modelBuilder.Entity<Scope>().HasCheckConstraint("name_cntsr","length(name) > 5");
+		modelBuilder.Entity<Grant>().HasIndex(i => i.Name).IsUnique();
+        modelBuilder.Entity<Grant>().HasCheckConstraint("name_cntsr","length(name) > 5");
 
         modelBuilder.Entity<AppClient>().HasIndex(i => i.Name).IsUnique();
         modelBuilder.Entity<AppClient>().HasCheckConstraint("name_cntsr", "length(name) > 5");
@@ -82,15 +82,18 @@ public class UserAccStore : Store<User> {
 }
 
 
-public class ScopeStore : Store<Scope> {
+public class GrantStore : Store<Grant> {
 
-    public ScopeStore(AppDbContext cx) : base(cx) {
-        _store = cx.Scopes;
+    public GrantStore(AppDbContext cx) : base(cx) {
+        _store = cx.Grants;
     }
 
-    public async Task<Scope?> GetScopeAsync(Guid scId) {
+    public async Task<Grant?> GetGrantAsync(string scId) {
         return await _store.Where(scp => scp.Id == scId).FirstOrDefaultAsync();
     }
+	public Grant GetGrant(string scId) {
+		return _store.Where(scp => scp.Id == scId).FirstOrDefault();
+	}
 }
 public class AppClientStore : Store<AppClient> {
 
@@ -121,7 +124,7 @@ public class SessionStore : Store<Session> {
         //        select session;
         //return await q.FirstAsync();
 
-        return await _store.Include(c => c.Scopes).Include(c => c.App).Include(c => c.User).Where(row => row.User.Login == usr && row.App.Id == appId).FirstOrDefaultAsync();
+        return await _store.Include(c => c.Grants).Include(c => c.App).Include(c => c.User).Where(row => row.User.Login == usr && row.App.Id == appId).FirstOrDefaultAsync();
 
 	}
 
@@ -131,7 +134,7 @@ public class SessionStore : Store<Session> {
         //        select session;
         //return await q.FirstAsync();
 
-        return await _store.Include(c => c.Scopes).Include(c => c.App).Include(c => c.User).Where(row => row.User.Login == usr).ToListAsync();
+        return await _store.Include(c => c.Grants).Include(c => c.App).Include(c => c.User).Where(row => row.User.Login == usr).ToListAsync();
 
     }
 
@@ -141,7 +144,7 @@ public class SessionStore : Store<Session> {
         //        select session;
         //return await q.FirstAsync();
 
-        return await _store.Include(c => c.Scopes).Include(c => c.App).Include(c => c.User).ToListAsync();
+        return await _store.Include(c => c.Grants).Include(c => c.App).Include(c => c.User).ToListAsync();
 
     }
 
@@ -151,7 +154,7 @@ public class SessionStore : Store<Session> {
 		//        select session;
 		//return await q.FirstAsync();
 
-		return await _store.Include(c => c.Scopes).Include(c => c.App).Include(c => c.User).Where(row => row.Id == sessId).FirstOrDefaultAsync();
+		return await _store.Include(c => c.Grants).Include(c => c.App).Include(c => c.User).Where(row => row.Id == sessId).FirstOrDefaultAsync();
 
 	}
 
@@ -161,11 +164,11 @@ public class SessionStore : Store<Session> {
 		//        select session;
 		//return await q.FirstAsync();
 
-		return await _store.Include(c => c.Scopes).Include(c => c.App).Include(c => c.User).Where(row => row.Code == code).FirstOrDefaultAsync();
+		return await _store.Include(c => c.Grants).Include(c => c.App).Include(c => c.User).Where(row => row.Code == code).FirstOrDefaultAsync();
 
 	}
 
-	public async Task<Session?> CreateSession(string usr, string appId, Guid[] scopes) {
+	public async Task<Session?> CreateSession(string usr, string appId, Grant[] scopes) {
         var _app = (from app in _cx.AppClients
                    where app.Id == appId
                    select app).FirstOrDefault();
@@ -178,9 +181,7 @@ public class SessionStore : Store<Session> {
                 App = _app,
                 User = _usr,
                 Code = RandomTokenGenerator.CreateKey(),
-                Scopes = (from scope in _cx.Scopes
-                          where scopes.Contains(scope.Id)
-                          select scope).ToList()
+                Grants = scopes
 			};
             _store.Add(sess);
             await _cx.SaveChangesAsync();
