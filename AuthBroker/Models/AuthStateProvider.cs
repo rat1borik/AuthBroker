@@ -29,23 +29,24 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider {
 		try {
 			//await Task.Delay(5000);
 			var userSessionStorageResult = await _localStorage.GetItemAsync<string>("session");
-			if (userSessionStorageResult == null)
-				return await Task.FromResult(new AuthenticationState(_anonymous));
-			var data = _cryptoProvider.Decrypt<UserSession>(userSessionStorageResult);
-			if (data == null)
-				return await Task.FromResult(new AuthenticationState(_anonymous));
-			var user = await _userStore.GetByLogin(data.UserName);
-			if (user == null || !user.VerifyPassword(Encoding.UTF8.GetBytes(data.Password)))
-				return await Task.FromResult(new AuthenticationState(_anonymous));
-			var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
-			{
-				new Claim(ClaimTypes.Name, user.Login),
-				new Claim(ClaimTypes.Role, user.IsAdmin?"Admin":"User")
-			}, "Auth"));
-			return await Task.FromResult(new AuthenticationState(claimsPrincipal));
-		} catch {
-			return await Task.FromResult(new AuthenticationState(_anonymous));
-		}
+			if (userSessionStorageResult != null) {
+
+				var data = _cryptoProvider.Decrypt<UserSession>(userSessionStorageResult);
+				if (data != null) {
+					var user = await _userStore.GetByLogin(data.UserName);
+					if (user != null && user.VerifyPassword(Encoding.UTF8.GetBytes(data.Password))) {
+						var claimsPrincipal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>{
+							new Claim(ClaimTypes.Name, user.Login),
+							new Claim(ClaimTypes.Role, user.IsAdmin?"Admin":"User")
+						}, "Auth"));
+						return await Task.FromResult(new AuthenticationState(claimsPrincipal));
+					}
+				}
+			}
+		} catch { }
+
+		NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_anonymous)));
+		return await Task.FromResult(new AuthenticationState(_anonymous));
 	}
 
 	public async Task UpdateAuthenticationState(UserSession userSession) {

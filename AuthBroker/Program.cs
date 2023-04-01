@@ -71,13 +71,16 @@ RSA signKey = RSA.Create();
 
 using (var scope = app.Services.CreateScope()) {
 	var dbCtx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-	dbCtx.Database.EnsureDeleted();
-	var scp = new Grant() { Id = "e-mail", Name = "E-mail", Action = "read", ValueType = "string" };
 
-	dbCtx.Database.EnsureCreated();
-	dbCtx.Grants.Add(scp);
-	dbCtx.SaveChanges();
+	if (app.Environment.IsDevelopment())
+		dbCtx.Database.EnsureDeleted();
 
+	
+	if (dbCtx.Database.EnsureCreated()) {
+		var scp = new Grant() { Id = "e-mail", Name = "E-mail", Action = "read", ValueType = "string" };
+		dbCtx.Grants.Add(scp);
+		dbCtx.SaveChanges();
+	}
 	//var usr = new User() { Login = "228775", Password = "123456" };
 	//dbCtx.Users.Add(usr);
 	//var appc = new AppClient() { Name = "341342143", AllowedRedirectUris = new Uri[] { new Uri("https://localhost:7156/") } };
@@ -97,13 +100,12 @@ if (!app.Environment.IsDevelopment()) {
 	app.UseHsts();
 }
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 
 var prefix = "/api/v1";
 app.MapGet(prefix+"/grants", async ([FromServices] GrantStore gs) =>
-		(await gs.GetListAsync()).Select(gr=>new GrantView() { Id = gr.Id, Name = gr.Name, Action = gr.Action, ValueType = gr.ValueType}));
+		(await gs.GetListAsync()).Select(gr=>new { Id = gr.Id, Name = gr.Name, Action = gr.Action, ValueType = gr.ValueType}));
 
 
 

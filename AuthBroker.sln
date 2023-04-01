@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AuthBroker", "AuthBroker\AuthBroker.csproj", "{8B926C99-C382-4960-B05E-476B7A0D1D72}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestClient", "TestClient\TestClient.csproj", "{5B82BC39-4751-4228-9412-2909B50500A0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8B926C99-C382-4960-B05E-476B7A0D1D72} = {8B926C99-C382-4960-B05E-476B7A0D1D72}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

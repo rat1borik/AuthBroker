@@ -25,18 +25,19 @@ builder.Services.AddTransient<TokenValidator>();
 builder.Services.AddSingleton<StateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 
-
-if (builder.Configuration.GetSection("SSO")["ClientId"] == null || builder.Configuration.GetSection("SSO")["ClientSecret"] == null) {
-	throw new Exception("No ClientId or ClientSecret in configuration file");
+var ssoConfig = builder.Configuration.GetSection("SSO");
+if (ssoConfig["ClientId"] == null || ssoConfig["ClientSecret"] == null|| ssoConfig["Host"] == null) {
+	throw new Exception("No SSO data in config file (ClientId, ClientSecret, Host)");
 }
 
 var app = builder.Build();
 
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment()) {
-    app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+	app.UseExceptionHandler("/Error");
+	// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+	app.UseHsts();
 }
 
 app.UseRequestLocalization(new RequestLocalizationOptions()

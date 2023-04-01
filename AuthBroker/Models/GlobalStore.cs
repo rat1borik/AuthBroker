@@ -89,13 +89,6 @@ public class Grant {
 	public ICollection<Session>? Sessions { get; set; }
 }
 
-public class GrantView {
-	public string Id { get; set; }
-	public string Name { get; set; }
-	public string? Action { get; set; }
-	public string? ValueType { get; set; }
-}
-
 public class AppClient {
 	public string Id { get; set; } = Math.Abs(Random.Shared.NextInt64()).ToString();
 	public byte[] SecretKey { get; set; }

@@ -126,12 +126,12 @@
 
 	protected override void OnInitialized() {
 		editContextReg = new(modelR);
-		editContextReg.OnValidationRequested += async (s, e) => await HandleValidation();
-		editContextReg.OnFieldChanged += async (s, e) => await HandleValidation();
+		editContextReg.OnValidationRequested += (s, e) => HandleValidation();
+		editContextReg.OnFieldChanged += (s, e) => HandleValidation();
 		messageStoreReg = new(editContextReg);
 	}
 
-	private async Task HandleValidation() {
+	private void HandleValidation() {
 		messageStoreReg?.Clear();
 		// Custom validation logic
 		if (modelR.Password != modelR.ValidationPassword) {
@@ -152,7 +152,6 @@
 				UserName = model.UserName,
 				Password = model.Password
 				});
-		navManager.NavigateTo("/", true);
 	}
 
 	private async Task SignUp() {

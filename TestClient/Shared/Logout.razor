@@ -16,7 +16,7 @@
 		if (!(await customAuthStateProvider.GetAuthenticationStateAsync()).IsAnonymous())
 		{
 			var request = new HttpRequestMessage(HttpMethod.Post,
-					"https://localhost:7276/api/v1/token/invalidate");
+					cfg.GetSection("SSO")["Host"] + "/api/v1/token/invalidate");
 			request.Headers.Add("Accept", "application/json");
 			request.Headers.Add("User-Agent", "TestApp");
 			request.Content = JsonContent.Create(new AuthTokenAction

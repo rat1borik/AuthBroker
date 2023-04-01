@@ -8,6 +8,9 @@
   "AllowedHosts": "*",
   "SSO": {
     "ClientId": "$clientId",
-    "ClentSecret": "$clientSecret"
+    "ClentSecret": "$clientSecret",
+    "Host": "https://localhost:7276",
+    "StateLifeTime": 240,
+    "VerifyIp": true // When true must check RemoteIp with Ip in auth state on equality
   }
 }

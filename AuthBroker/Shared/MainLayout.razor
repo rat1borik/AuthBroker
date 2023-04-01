@@ -28,7 +28,8 @@
 			</AuthorizeView>
 	<main>
 		<div class="top-row px-4">
-			<span>@string.Format("{0} ({1})", Auth.User.Identity.Name, Auth.User.IsInRole("Admin")?@Loc["Admin"]:@Loc["User"])</span>
+			<a href="/">@Loc["Index"]</a>
+			<a href="/account">@string.Format("{0} ({1})", Auth.User.Identity.Name, Auth.User.IsInRole("Admin")?@Loc["Admin"]:@Loc["User"])</a>
 			<a href="/logout">@Loc["Logout"]</a>
 		</div>
 

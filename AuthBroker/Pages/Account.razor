@@ -1,0 +1,30 @@
+﻿@page "/account"
+
+@using System.Web
+@using Models
+@inject UserAccStore uas
+@inject NavigationManager navMan
+<PageTitle>@Loc["Account"]</PageTitle>
+
+<h1>@Loc["Account"]</h1>
+
+<Button Color="ButtonColor.Primary" @onclick="ChangePassword">@Loc["Change password"]</Button>
+<Button Color="ButtonColor.Danger" @onclick="DeleteAccount">@Loc["Delete account"]</Button>
+
+@code{
+	[Inject] protected ToastService ToastService { get; set; }
+
+
+	private async Task DeleteAccount() {
+		var authData = await asp.GetAuthenticationStateAsync();
+		if (!authData.User.Identity.IsAuthenticated) return;
+		await uas.RemoveAsync(await uas.GetByLogin(authData.User.Identity.Name));
+		await asp.GetAuthenticationStateAsync();
+		navMan.NavigateTo("/");
+
+	}
+
+	private async Task ChangePassword() {
+		ToastService.Notify(new ToastMessage(ToastType.Info, Loc["Yet not realised"]));
+	}
+}

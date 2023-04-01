@@ -49,18 +49,18 @@
 	public string? State { get; set; }
 
 	private async Task SignIn() {
-		navManager.NavigateTo(string.Format("https://localhost:7276/auth?app_id={0}&response_type=code&scopes=e-mail&redirect_uri={1}auth?state={2}", cfg.GetSection("SSO")["ClientId"], navManager.BaseUri, sp.GetState().Base64UrlEncode()), true);
+		navManager.NavigateTo(string.Format(cfg.GetSection("SSO")["Host"]+"/auth?app_id={0}&response_type=code&scopes=e-mail&redirect_uri={1}auth?state={2}", cfg.GetSection("SSO")["ClientId"], navManager.BaseUri, sp.GetState(connectionInfo.RemoteIpAddress).Base64UrlEncode()), true);
 	}
 
 	protected override async Task OnInitializedAsync() {
 		if ((await asp.GetAuthenticationStateAsync()).IsAnonymous()) {
 			if (AuthCode != null) {
-				if (State == null || !sp.ValidateState(State.Base64UrlDecode())) {
+				if (State == null || !sp.ValidateState(State.Base64UrlDecode(), connectionInfo.RemoteIpAddress)) {
 					ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Something went wrong"] + ": " + Loc["session time has expired"]));
 					return;
 				}
 				var request = new HttpRequestMessage(HttpMethod.Post,
-						"https://localhost:7276/api/v1/token");
+						cfg.GetSection("SSO")["Host"] + "/api/v1/token");
 				request.Headers.Add("Accept", "application/json");
 				request.Headers.Add("User-Agent", "TestApp");
 				request.Content = JsonContent.Create(new AuthTokenRequest { GrantType = "authorization_code", Code = AuthCode, Secret = cfg.GetSection("SSO")["ClientSecret"], RemoteIp = connectionInfo.RemoteIpAddress, UserAgent = connectionInfo.UserAgent });
