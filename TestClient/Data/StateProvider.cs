@@ -1,6 +1,8 @@
 ﻿using System.Security.Cryptography;
 using System.Text.Json;
 using System.Linq;
+using Microsoft.Extensions.Configuration;
+using AuthBrokerClient;
 
 namespace TestClient.Data {
 	public class StateProvider {
@@ -64,21 +66,5 @@ namespace TestClient.Data {
 		public DateTime ExpiredIn { get; set; }
 
 		public string Ip { get; set; }
-	}
-}
-
-public static class GuidEx {
-	public static bool IsGuid(this string value) {
-		Guid x;
-		return Guid.TryParse(value, out x);
-	}
-}
-
-public static class Base64Ex {
-	public static string Base64UrlEncode(this string value) {
-		return value.Replace('+', '.').Replace('/', '_').Replace('=', '-');
-	}
-	public static string Base64UrlDecode(this string value) {
-		return value.Replace('.', '+').Replace('_', '/').Replace('-', '=');
 	}
 }

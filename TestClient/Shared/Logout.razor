@@ -1,10 +1,12 @@
 ﻿@page "/logout"
 
 @using TestClient.Authentication
+@using AuthBrokerClient
 
 @inject NavigationManager navManager;
 @inject IHttpClientFactory ClientFactory
 @inject IConfiguration cfg
+@inject AuthTokenProvider atp
 
 <span>@Loc["Logging out"]</span>
 
@@ -13,23 +15,8 @@
 
 	protected override async Task OnInitializedAsync() {
 		var customAuthStateProvider = (CustomAuthenticationStateProvider)asp;
-		if (!(await customAuthStateProvider.GetAuthenticationStateAsync()).IsAnonymous())
-		{
-			var request = new HttpRequestMessage(HttpMethod.Post,
-					cfg.GetSection("SSO")["Host"] + "/api/v1/token/invalidate");
-			request.Headers.Add("Accept", "application/json");
-			request.Headers.Add("User-Agent", "TestApp");
-			request.Content = JsonContent.Create(new AuthTokenAction
-				{
-					Token = (await customAuthStateProvider.GetAuthenticationStateAsync()).User.Claims.Where(cl => cl.Type == "access_token").FirstOrDefault().Value,
-					Secret = cfg.GetSection("SSO")["ClientSecret"]
-				});
-
-			var client = ClientFactory.CreateClient();
-
-			var response = await client.SendAsync(request);
-			if (!response.IsSuccessStatusCode)
-			{
+		if (!(await customAuthStateProvider.GetAuthenticationStateAsync()).IsAnonymous()) {
+			if (!await atp.Invalidate((await customAuthStateProvider.GetAuthenticationStateAsync()).User.Claims.Where(cl => cl.Type == "access_token").FirstOrDefault().Value)) {
 				ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Some error occured"]));
 			}
 

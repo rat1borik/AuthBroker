@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.Components.Web;
 using TestClient.Authentication;
 using TestClient.Data;
+using AuthBrokerClient;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -21,7 +22,7 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddAntiforgery();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
-builder.Services.AddTransient<TokenValidator>();
+builder.Services.AddTransient<AuthTokenProvider>();
 builder.Services.AddSingleton<StateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 

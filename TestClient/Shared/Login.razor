@@ -6,13 +6,14 @@
 @using System.Security.Cryptography;
 @using TestClient.Authentication;
 @using TestClient.Data;
+@using AuthBrokerClient;
 
 @inject IHttpClientFactory ClientFactory
 @inject IJSRuntime js;
 @inject NavigationManager navManager;
 @inject StateProvider sp;
 @inject IConfiguration cfg;
-@inject TokenValidator tokenValidator;
+@inject AuthTokenProvider atp;
 
 <section class="vh-100 gradient-custom">
 	@if (AuthCode != null) {
@@ -25,7 +26,7 @@
 					<div class="mb-md-3 mt-md-4 pb-5">
 				
 						<span class="mb-5 fs-1 text-black fw-bold">Test Client</span>
-							<Button @onclick="async() => await SignIn()" Class="btn-outline-primary btn-lg px-5 mt-5">@Loc["Login via AuthBroker"]</Button>
+							<Button @onclick="SignIn" Class="btn-outline-primary btn-lg px-5 mt-5">@Loc["Login via AuthBroker"]</Button>
 		</div>
 		</div>
 		</div>
@@ -36,7 +37,7 @@
 
 @code {
 	[CascadingParameter]
-	private ConnectionInfo? connectionInfo { get; set; }
+	private ConnectionInfo connectionInfo { get; set; }
 
 	[Inject] protected ToastService ToastService { get; set; }
 
@@ -48,8 +49,8 @@
 	[SupplyParameterFromQuery(Name = "state")]
 	public string? State { get; set; }
 
-	private async Task SignIn() {
-		navManager.NavigateTo(string.Format(cfg.GetSection("SSO")["Host"]+"/auth?app_id={0}&response_type=code&scopes=e-mail&redirect_uri={1}auth?state={2}", cfg.GetSection("SSO")["ClientId"], navManager.BaseUri, sp.GetState(connectionInfo.RemoteIpAddress).Base64UrlEncode()), true);
+	private void SignIn() {
+		navManager.NavigateTo(atp.GetAuthenticationURL(navManager.BaseUri, sp.GetState(connectionInfo.RemoteIpAddress).Base64UrlEncode()), true);
 	}
 
 	protected override async Task OnInitializedAsync() {
@@ -59,35 +60,15 @@
 					ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Something went wrong"] + ": " + Loc["session time has expired"]));
 					return;
 				}
-				var request = new HttpRequestMessage(HttpMethod.Post,
-						cfg.GetSection("SSO")["Host"] + "/api/v1/token");
-				request.Headers.Add("Accept", "application/json");
-				request.Headers.Add("User-Agent", "TestApp");
-				request.Content = JsonContent.Create(new AuthTokenRequest { GrantType = "authorization_code", Code = AuthCode, Secret = cfg.GetSection("SSO")["ClientSecret"], RemoteIp = connectionInfo.RemoteIpAddress, UserAgent = connectionInfo.UserAgent });
 
-				var client = ClientFactory.CreateClient();
-
-				var response = await client.SendAsync(request);
-
-				if (response.IsSuccessStatusCode && response.Content != null) {
-					var result = await response.Content.ReadFromJsonAsync<AuthTokenResponse>();
-					var jwtHandler = new JwtSecurityTokenHandler();
-					SecurityToken securityToken;
-					try {
-						var claims = jwtHandler.ValidateToken(result.AccessToken, await tokenValidator.GetValidationParameters(), out securityToken);
-						if (securityToken != null&& claims != null) {
-							ToastService.Notify(new ToastMessage(ToastType.Success, "Success"));
-							await ((CustomAuthenticationStateProvider)asp).UpdateAuthenticationState(result.AccessToken);
-							navManager.NavigateTo("/");
-						}
-					} catch (SecurityTokenException) {
-						ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Incorrect authentification data"]));
-					} catch (ArgumentNullException) {
-						ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Incorrect authentification data"]));
-					}
-				} else {
-					ToastService.Notify(new ToastMessage(ToastType.Danger, response.ReasonPhrase));
+				var (err, token) = await atp.Authenticate(AuthCode, connectionInfo.RemoteIpAddress, connectionInfo.UserAgent);
+				if (err != null) {
+					ToastService.Notify(new ToastMessage(ToastType.Danger, Loc[err]));
+					return;
 				}
+
+				await ((CustomAuthenticationStateProvider)asp).UpdateAuthenticationState(token);
+				navManager.NavigateTo("/");
 			}
 		} else {
 			navManager.NavigateTo("/");

@@ -7,48 +7,30 @@ using Microsoft.AspNetCore.Mvc;
 using BlazorBootstrap;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using AuthBrokerClient;
 
 namespace TestClient.Authentication;
 
 public class CustomAuthenticationStateProvider : AuthenticationStateProvider {
 
 	private readonly ILocalStorageService _localStorage;
-	private JwtSecurityTokenHandler JwtHandler;
-	TokenValidator _tokenValidator;
-	IHttpClientFactory _httpClientFactory;
-	IConfiguration _cfg;
+	AuthTokenProvider _atv;
 
 
 
-	public CustomAuthenticationStateProvider(ILocalStorageService localStorage, TokenValidator tokenValidator, IHttpClientFactory httpClientFactory, IConfiguration cfg) {
-        _localStorage = localStorage;
-		 JwtHandler = new JwtSecurityTokenHandler();
-		_tokenValidator	= tokenValidator;
-		_httpClientFactory = httpClientFactory;
-		_cfg = cfg;
+	public CustomAuthenticationStateProvider(ILocalStorageService localStorage, AuthTokenProvider atv) {
+		_localStorage = localStorage;
+		_atv = atv;
 	}
 
 	public override async Task<AuthenticationState> GetAuthenticationStateAsync() {
 		try {
-			//await Task.Delay(5000);
+
 			var userSessionStorageResult = await _localStorage.GetItemAsync<string>("AuthToken");
 			if (userSessionStorageResult != null) {
-				SecurityToken securityToken;
-				var claims = JwtHandler.ValidateToken(userSessionStorageResult, await _tokenValidator.GetValidationParameters(), out securityToken);
-				if (securityToken != null && claims != null) {
-					var request = new HttpRequestMessage(HttpMethod.Post,
-							"https://localhost:7276/api/v1/token/validate");
-					request.Headers.Add("Accept", "application/json");
-					request.Headers.Add("User-Agent", "TestApp");
-					request.Content = JsonContent.Create(new AuthTokenAction { Token = claims.Claims.Where(cl=>cl.Type=="access_token").FirstOrDefault().Value, Secret = _cfg.GetSection("SSO")["ClientSecret"] });
-
-					var client = _httpClientFactory.CreateClient();
-
-					var response = await client.SendAsync(request);
-
-					if (response.IsSuccessStatusCode) {
-						return await Task.FromResult(new AuthenticationState(claims));
-					}
+				var asp = await _atv.Validate(userSessionStorageResult);
+				if (!asp.IsAnonymous()) {
+					return asp;
 				}
 			}
 		} catch { }
@@ -59,95 +41,17 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider {
 	}
 
 	public async Task UpdateAuthenticationState(string jwtToken = null) {
-		ClaimsPrincipal claimsPrincipal = Claims.Anonymous;
-
+		var asp = new AuthenticationState(Claims.Anonymous);
 		if (jwtToken != null) {
-			SecurityToken securityToken;
-			var claims = JwtHandler.ValidateToken(jwtToken, await _tokenValidator.GetValidationParameters(), out securityToken);
-			if (securityToken != null && claims != null) {
-				claimsPrincipal = claims;
+			asp = await _atv.Validate(jwtToken);
+			if (!asp.IsAnonymous()) {
 				await _localStorage.SetItemAsync("AuthToken", jwtToken);
 			}
 		} else {
 			await _localStorage.RemoveItemAsync("AuthToken");
 		}
 
-		NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(claimsPrincipal)));
+		NotifyAuthenticationStateChanged(Task.FromResult(asp));
 	}
 	
-}
-public class TokenValidator {
-
-	public class ValidationInfo {
-		public string PublicKey { get; set; }
-		public string Algorithm { get; set; }
-	}
-
-	IHttpClientFactory ClientFactory { get; set; }
-
-	IConfiguration Cfg { get; set; }
-	public TokenValidator(IHttpClientFactory clientFactory, IConfiguration cfg) {
-		ClientFactory = clientFactory;
-		Cfg = cfg;
-	}
-
-	public async Task<TokenValidationParameters> GetValidationParameters() {
-		var request = new HttpRequestMessage(HttpMethod.Get,
-					"https://localhost:7276/api/v1/token/validate");
-		request.Headers.Add("Accept", "application/json");
-		request.Headers.Add("User-Agent", "TestApp");
-		var client = ClientFactory.CreateClient();
-		var response = await client.SendAsync(request);
-		if (response.IsSuccessStatusCode && response.Content != null) {
-			var result = await response.Content.ReadFromJsonAsync<ValidationInfo>();
-
-			RSA key = RSA.Create();
-			int cnt;
-			key.ImportRSAPublicKey(Convert.FromBase64String(result.PublicKey), out cnt);
-			if (cnt > 0) {
-				return new TokenValidationParameters() {
-					ValidateLifetime = true,
-					ValidateAudience = true,
-					ValidateIssuer = true,
-					ValidIssuer = "https://localhost:7276",
-					ValidAudience = Cfg.GetSection("SSO")["ClientId"],
-					IssuerSigningKey = new RsaSecurityKey(key)
-				};
-			}
-
-		}
-		return null;
-	}
-}
-
-public class AuthTokenAction {
-
-	public string Secret { get; set; }
-
-	public string Token { get; set; }
-
-}
-
-public class AuthTokenRequest {
-    public string GrantType { get; set; }
-
-    public string Code { get; set; }
-
-    public string Secret { get; set; }
-
-	public string RemoteIp { get; set; }
-	public string UserAgent { get; set; }
-}
-
-public class AuthTokenResponse {
-    public string AccessToken { get; set; }
-    public int ExpiresIn { get; set; }
-    public string TokenType { get; set; }
-}
-
-public static class Claims {
-	public static ClaimsPrincipal Anonymous = new ClaimsPrincipal(new ClaimsIdentity());
-	public static bool IsAnonymous(this AuthenticationState asp) {
-		return asp.User == Anonymous;
-	}
 }

@@ -88,8 +88,7 @@
 	}
 
 	protected override async Task OnInitializedAsync() {
-		try
-		{
+		try {
 			var state = await asp.GetAuthenticationStateAsync();
 			CurrentSession = await ss.GetSessionAsync(AppId, state.User.Identity.Name);
 			AuthApp = await acs.GetAppClientAsync(AppId);
@@ -97,7 +96,7 @@
 			if (CurrentSession != null)
 				Redirect(CurrentSession.Code);
 
-		}catch(Exception ex) {
+		} catch(Exception ex) {
 			
 		}
 	}
