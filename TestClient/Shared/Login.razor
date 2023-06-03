@@ -50,7 +50,7 @@
 	public string? State { get; set; }
 
 	private void SignIn() {
-		navManager.NavigateTo(atp.GetAuthenticationURL(navManager.BaseUri, sp.GetState(connectionInfo.RemoteIpAddress).Base64UrlEncode()), true);
+		navManager.NavigateTo(atp.GetAuthenticationURL(navManager.BaseUri + "auth", sp.GetState(connectionInfo.RemoteIpAddress).Base64UrlEncode()), true);
 	}
 
 	protected override async Task OnInitializedAsync() {

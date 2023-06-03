@@ -72,15 +72,15 @@ RSA signKey = RSA.Create();
 using (var scope = app.Services.CreateScope()) {
 	var dbCtx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-	if (app.Environment.IsDevelopment())
-		dbCtx.Database.EnsureDeleted();
+	//if (app.Environment.IsDevelopment())
+	//	dbCtx.Database.EnsureDeleted();
 
 	
-	if (dbCtx.Database.EnsureCreated()) {
-		var scp = new Grant() { Id = "e-mail", Name = "E-mail", Action = "read", ValueType = "string" };
-		dbCtx.Grants.Add(scp);
-		dbCtx.SaveChanges();
-	}
+	//if (dbCtx.Database.EnsureCreated()) {
+	//	var scp = new Grant() { Id = "e-mail", Name = "E-mail", Action = "read", ValueType = "string" };
+	//	dbCtx.Grants.Add(scp);
+	//	dbCtx.SaveChanges();
+	//}
 	//var usr = new User() { Login = "228775", Password = "123456" };
 	//dbCtx.Users.Add(usr);
 	//var appc = new AppClient() { Name = "341342143", AllowedRedirectUris = new Uri[] { new Uri("https://localhost:7156/") } };

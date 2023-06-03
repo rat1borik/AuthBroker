@@ -74,7 +74,7 @@
 	private void Redirect(string authCode) {
 		Uri redir;
 		if (Uri.TryCreate(RedirectURI, UriKind.Absolute, out redir) && ResponseType == "code") {
-			if (AuthApp.AllowedRedirectUris.Where(uri=>uri.IsBaseOf(redir)).FirstOrDefault() == null) {
+			if (AuthApp.AllowedRedirectUris.Where(uri=>uri.IsBaseOf(redir)&&uri.Scheme == redir.Scheme).FirstOrDefault() == null) {
 				ToastService.Notify(new ToastMessage(ToastType.Danger, @Loc["Something went wrong (Invalid request data)"]));
 				return;
 			}
@@ -82,7 +82,8 @@
 			var query = HttpUtility.ParseQueryString(ub.Query);
 			query["auth_code"] = authCode.Base64UrlEncode();
 			ub.Query = query.ToString();
-			navManager.NavigateTo(ub.ToString(), true);
+			navManager.NavigateTo(ub.ToString(), true, true);
+			Console.WriteLine(navManager.BaseUri);
 
 		}
 	}

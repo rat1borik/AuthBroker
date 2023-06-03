@@ -66,27 +66,30 @@ namespace AuthBrokerClient {
 
 		public async Task<AuthenticationState> Validate(string token, bool expCheck = true) {
 			SecurityToken securityToken;
-			var claims = JwtHandler.ValidateToken(token, await _tokenValidator.GetValidationParameters(), out securityToken);
-			if (securityToken != null && claims != null) {
-				if (expCheck) {
-					var request = new HttpRequestMessage(HttpMethod.Post,
-						string.Format("{0}/api/v1/token/validate", _cfg.GetSection("SSO")["Host"]));
-					request.Headers.Add("Accept", "application/json");
-					request.Headers.Add("User-Agent", "TestApp");
-					request.Content = JsonContent.Create(new AuthTokenAction { Token = claims.Claims.Where(cl => cl.Type == "access_token").FirstOrDefault().Value, Secret = _cfg.GetSection("SSO")["ClientSecret"] });
+			try {
+				var claims = JwtHandler.ValidateToken(token, await _tokenValidator.GetValidationParameters(), out securityToken);
+				if (securityToken != null && claims != null) {
+					if (expCheck) {
+						var request = new HttpRequestMessage(HttpMethod.Post,
+							string.Format("{0}/api/v1/token/validate", _cfg.GetSection("SSO")["Host"]));
+						request.Headers.Add("Accept", "application/json");
+						request.Headers.Add("User-Agent", "TestApp");
+						request.Content = JsonContent.Create(new AuthTokenAction { Token = claims.Claims.Where(cl => cl.Type == "access_token").FirstOrDefault().Value, Secret = _cfg.GetSection("SSO")["ClientSecret"] });
 
-					var client = _httpClientFactory.CreateClient();
+						var client = _httpClientFactory.CreateClient();
 
-					var response = await client.SendAsync(request);
+						var response = await client.SendAsync(request);
 
-					if (response.IsSuccessStatusCode) {
+						if (response.IsSuccessStatusCode) {
+							return await Task.FromResult(new AuthenticationState(claims));
+						}
+					} else {
 						return await Task.FromResult(new AuthenticationState(claims));
 					}
-				} else {
-					return await Task.FromResult(new AuthenticationState(claims));
 				}
+			} catch {
+				return await Task.FromResult(new AuthenticationState(Claims.Anonymous));
 			}
-
 			return await Task.FromResult(new AuthenticationState(Claims.Anonymous));
 		}
 
@@ -142,7 +145,7 @@ namespace AuthBrokerClient {
 		}
 
 		public string GetAuthenticationURL(string redirectUrl, string state) =>
-			string.Format(_cfg.GetSection("SSO")["Host"] + "/auth?app_id={0}&response_type=code&scopes=e-mail&redirect_uri={1}auth?state={2}", _cfg.GetSection("SSO")["ClientId"], redirectUrl, state);
+			string.Format(_cfg.GetSection("SSO")["Host"] + "/auth?app_id={0}&response_type=code&scopes=e-mail&redirect_uri={1}?state={2}", _cfg.GetSection("SSO")["ClientId"], redirectUrl, state);
 	}
 
 	public static class Claims {
