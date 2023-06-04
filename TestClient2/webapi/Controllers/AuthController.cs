@@ -8,6 +8,9 @@ namespace webapi.Controllers {
 	[Route("api/v1/auth")]
 	public class AuthController : ControllerBase {
 
+		public class AuthRequest {
+			public string AuthCode { get; set; }	
+		}
 
 		private readonly AuthTokenProvider _atp;
 
@@ -17,12 +20,12 @@ namespace webapi.Controllers {
 
 		[HttpGet("url")]
 		public object GetUrl() {
-			return new { Url = _atp.GetAuthenticationURL("https://"+HttpContext.Request.Host.ToString()+"/auth", null)};
+			return new { Url = _atp.GetAuthenticationURL("https://localhost:5003/auth", null) };
 		}
 
 		[HttpPost]
-		public async Task<IActionResult> Auth(string authCode) {
-			var (err, token) = await _atp.Authenticate(authCode, HttpContext.Connection.RemoteIpAddress.ToString(), HttpContext.Request.Headers["User-Agent"]);
+		public async Task<IActionResult> Auth(AuthRequest req) {
+			var (err, token) = await _atp.Authenticate(req.AuthCode, HttpContext.Connection.RemoteIpAddress.ToString(), HttpContext.Request.Headers["User-Agent"]);
 			if (err != null) {
 				return BadRequest();
 			}
