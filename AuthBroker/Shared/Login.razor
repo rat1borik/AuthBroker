@@ -175,6 +175,14 @@
 				UserName = modelR.UserName,
 				Password = modelR.Password
 			});
+
+		var uri = new Uri(navManager.Uri);
+
+		if (uri.LocalPath.StartsWith("/auth")) {
+			navManager.NavigateTo(navManager.Uri, true);
+			return;
+		}
+
 		navManager.NavigateTo("/", true);
 	}
 }

@@ -13,7 +13,7 @@
 	private async Task OnlyAuthButton() {
 		var authData = await asp.GetAuthenticationStateAsync();
 		if (!authData.User.Identity.IsAuthenticated) return;
-		ToastService.Notify(new ToastMessage(ToastType.Danger, Loc["Some error occured"]));
+		ToastService.Notify(new ToastMessage(ToastType.Success, Loc["You are successfully authed!"]));
 	}
 	private async Task ShowEmail() {
 		var authData = await asp.GetAuthenticationStateAsync();

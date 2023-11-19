@@ -1,7 +1,4 @@
 <template>
-  <nav>
-    <HelloWorld msg="Welcome to Your Vue.js App" />
-  </nav>
   <router-view />
 </template>
 
