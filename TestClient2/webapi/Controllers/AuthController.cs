@@ -9,18 +9,21 @@ namespace webapi.Controllers {
 	public class AuthController : ControllerBase {
 
 		public class AuthRequest {
-			public string AuthCode { get; set; }	
+			public string AuthCode { get; set; }
 		}
 
 		private readonly AuthTokenProvider _atp;
 
-		public AuthController(AuthTokenProvider atp) {
+		private readonly IConfiguration _configuration;
+
+		public AuthController(AuthTokenProvider atp, IConfiguration configuration) {
 			_atp = atp;
+			_configuration = configuration;
 		}
 
 		[HttpGet("url")]
 		public object GetUrl() {
-			return new { Url = _atp.GetAuthenticationURL("https://localhost:5003/auth", null) };
+			return new { Url = _atp.GetAuthenticationURL((_configuration.GetSection("SSO")["RedirectUrl"] ?? _configuration.GetSection("SSO")["Host"]), null) };
 		}
 
 		[HttpPost]
